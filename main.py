@@ -78,7 +78,7 @@ def emergency_off():
     coms.setCurrent(0, MAX_CUR, MIN_CUR, socket)
     coms.setVoltage(0, MAX_VOLT, MIN_VOLT, socket)
     coms.setPowerPos(0, MAX_POWER, MIN_POWER, socket)
-time.sleep(5)
+#time.sleep(5)
 try:
     while True:
         #plt.annotate(f'({U0:.2f}, {I0:.2f})', xy=(U0, I0), xytext=(5, 5), textcoords='offset points', color='red')
