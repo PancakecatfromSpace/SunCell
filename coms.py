@@ -138,7 +138,7 @@ def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket):
     int: 0 if the power was set successfully, -1 if the power is out of range.
     """
     retval = 0
-    if power >= MIN_POWER and power <= MAX_POWER_POS:
+    if power >= MIN_POWER and power <= MAX_POWER:
         sendCommand("SOUR:POW {0}".format(power), supplySocket)
     else:
         retval = -1
