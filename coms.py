@@ -147,27 +147,64 @@ def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket):
 
 def readVoltage(supplySocket) -> float:
     """
-    Query the power supply for its output voltage.
+    Query the power supply for its maximum output voltage.
 
     Args:
     supplySocket: The socket to which the command should be sent.
 
     Returns:
-    float: The measured or configured output voltage parsed from the device response.
+    float: The configured maximum output voltage parsed from the device response.
     """
     return sendAndReceiveCommand("SOUR:VOLT?", supplySocket)
 
 def readCurrent(supplySocket) -> float:
     """
-    Query the power supply for its output current.
+    Query the power supply for its maximum output current.
 
     Args:
     supplySocket: The socket to which the command should be sent.
 
     Returns:
-    float: The measured or configured output current parsed from the device response.
+    float: The configured maximum output current parsed from the device response.
     """
     return sendAndReceiveCommand("SOUR:CUR?", supplySocket)
+
+def measureVoltage(supplySocket) -> float:
+    """
+    Query the measured output Voltage
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output voltage parsed from the device response.
+    """
+    return sendAndReceiveCommand("MEAS:VOL?", supplySocket)
+
+def measureCurrent(supplySocket) -> float:
+    """
+    Query the measured output Current
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output current parsed from the device response.
+    """
+    return sendAndReceiveCommand("MEAS:CUR?", supplySocket)
+
+def measurePower(supplySocket) -> float:
+    """
+    Query the measured output Power
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output power parsed from the device response.
+    """
+    return sendAndReceiveCommand("MEAS:POW?", supplySocket)
+
 
 
 def setProgSourceV(src:str, supplySocket) -> int:
