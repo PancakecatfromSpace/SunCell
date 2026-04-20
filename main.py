@@ -70,12 +70,16 @@ ax.plot(U_1, I_1, color='C0')
 #makes points interactable and updateable
 point1, = ax.plot([], [], marker='o', color='red', markersize=8)
 point2, = ax.plot([], [], marker='o', color='green', markersize=8)
+point3, = ax.plot([], [], marker='o', color='purple', markersize=8)
 #set the limits for the plot to be the max and min values in the vector U_1 and I_1
 ax.set_xlim(U_1.min(), U_1.max())
 ax.set_ylim(0, I_1.max()*1.1)
 #label stuff
 ax.set_xlabel("Voltage")
 ax.set_ylabel("Current")
+#make a text to move with the point
+measure_label = ax.text(10, 10,"Measured Value")
+setpoint_label = ax.text(10, 10, "Set Value")
 # adjust placement of plot to make room for slider
 fig.subplots_adjust(bottom=0.25)
 
@@ -142,18 +146,22 @@ try:
         U0 = float(coms.readVoltage(socket))
         I0 = float(coms.readCurrent(socket))
 
-        #print(readVoltage())
-        point1.set_data([U0], [I0])      # <- scalar -> sequence
-        point2.set_data([float(coms.measureVoltage(socket))], [current_slider])
+        UM = float(coms.measureVoltage(socket))
+        IM = float(coms.measureCurrent(socket))
 
+        point1.set_data([U0], [I0])      # <- scalar -> sequence
+        point2.set_data([UM], [IM])
+
+        measure_label.set_position((UM, IM+I_1.max()*0.05))
+        setpoint_label.set_position((U0, I0+I_1.max()*0.05))
+        #measure_label.update
+        
         print(current_slider)
 
         fig.canvas.draw_idle()
         fig.canvas.flush_events()
-        #volt = volt + 0.1
-        #volt2 = volt2 + 0.5
+        
         time.sleep(0.1)
-        U0 = U0 + 5
         i = i + 1
 except KeyboardInterrupt:
     pass
