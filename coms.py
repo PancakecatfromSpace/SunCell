@@ -64,7 +64,7 @@ def sendCommand(msg: str, supplySocket) -> None:
     supplySocket.sendall(msg.encode("UTF-8"))
 
 
-def setRemoteShutdownState(state, supplySocket):
+def setRemoteShutdownState(state:bool, supplySocket):
     """
     Args:
     state (bool): Desired remote shutdown state. True to enable remote shutdown (sends "SYST:RSD 1"); False to disable remote shutdown (sends "SYST:RSD 0").
@@ -247,7 +247,7 @@ def setProgSourceI(src:str, supplySocket) -> int:
     return retval
 
 #set source of max pos power
-def setProgSourceP(src, supplySocket) -> int:
+def setProgSourceP(src:str, supplySocket) -> int:
     """
     Set the power source on the power supply.
 
