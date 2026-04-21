@@ -137,7 +137,7 @@ try:
 
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
-
+        """
         # logic that checks if the current is higher than the upper left border
         if IM > I_1[0]:
             position = 0 # mark the left most position to be the current position
@@ -153,7 +153,14 @@ try:
         if IM > I_1[position - 1] and not position == 0:
             position = position - 1
             volt = U_1[position]
-            
+        """
+        # find insertion index that keeps descending order
+        idx = np.searchsorted(-I_1, -IM, side='right')  # idx in [0..len(I_1)]
+        # clamp to valid indices for selecting nearest segment
+        idx = min(max(idx, 0), len(I_1)-1)
+
+        volt = U_1[idx]
+        position = idx    
         # if the current or voltage is out of range, put everything to zero and end
         if coms.setCurrent(curr, MAX_CUR, MIN_CUR, socket) == -1:
             emergency_off()
