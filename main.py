@@ -94,11 +94,6 @@ curr_slider = Slider(
 plt.ion()
 plt.show()
 
-curr = I_1[np.argmax(U_1)]
-volt = U_1.max()
-
-volt2 = 0
-power = 10
 
 i = 0
 end = 5
@@ -116,7 +111,8 @@ def emergency_off():
 
 #set voltage to half the step width of the first value
 volt = U_1[1]/4
-curr = I_1[0]
+curr = I_1[0]*1.1
+power = 10
 
 """
 The position variable is important as it stores where within the range the current set point is located.
@@ -128,12 +124,6 @@ try:
     while True:
         #read the slider and update the value
         #current_slider = curr_slider.val
-
-        #U0 = float(coms.readVoltage(socket))
-        #I0 = float(coms.readCurrent(socket))
-
-        U0 = volt
-        I0 = curr
 
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
@@ -172,18 +162,16 @@ try:
             emergency_off()
             raise Exception(f"Fault! Attempted to set power {power} outside range [{MIN_POWER}, {MAX_POWER}]!")
 
-        soll.set_data([U0], [I0])      # <- scalar -> sequence
+        soll.set_data([volt], [curr])      # <- scalar -> sequence
         ist.set_data([UM], [IM])
 
         measure_label.set_position((UM, IM+I_1.max()*0.05))
-        setpoint_label.set_position((U0, I0+I_1.max()*0.05))
-        
-        #print(current_slider)
+        setpoint_label.set_position((volt, curr+I_1.max()*0.05))
 
         fig.canvas.draw_idle()
         fig.canvas.flush_events()
         
-        time.sleep(0.05)
+        time.sleep(0.1)
         i = i + 1
 except KeyboardInterrupt:
     pass
