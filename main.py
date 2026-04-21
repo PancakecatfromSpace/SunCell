@@ -127,7 +127,7 @@ position = 0
 try:
     while True:
         #read the slider and update the value
-        current_slider = curr_slider.val
+        #current_slider = curr_slider.val
 
         #U0 = float(coms.readVoltage(socket))
         #I0 = float(coms.readCurrent(socket))
@@ -176,7 +176,7 @@ try:
         fig.canvas.draw_idle()
         fig.canvas.flush_events()
         
-        time.sleep(0.01)
+        time.sleep(0.05)
         i = i + 1
 except KeyboardInterrupt:
     pass
