@@ -114,12 +114,6 @@ volt = U_1[1]/4
 curr = I_1[0]*1.1
 power = 10
 
-"""
-The position variable is important as it stores where within the range the current set point is located.
-It is to be set to zero 
-"""
-position = 0
-
 try:
     while True:
         #read the slider and update the value
@@ -127,30 +121,14 @@ try:
 
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
-        """
-        # logic that checks if the current is higher than the upper left border
-        if IM > I_1[0]:
-            position = 0 # mark the left most position to be the current position
-            volt = U_1[1]/4
-        # logic that checks if the current is lower than the lower right border 
-        elif IM < I_1[-1]:
-            position = U_1.size - 1 # mark the right most position to be the right most border
-            volt = U_1[-1]
-        # check if its within range and neither all the way to the right nor all the way to the left
-        if IM < I_1[position] and not position == U_1.size - 1:
-            position = position + 1
-            volt = U_1[position]
-        if IM > I_1[position - 1] and not position == 0:
-            position = position - 1
-            volt = U_1[position]
-        """
+        
+        # gpt-5 enhanced code
         # find insertion index that keeps descending order
         idx = np.searchsorted(-I_1, -IM, side='right')  # idx in [0..len(I_1)]
         # clamp to valid indices for selecting nearest segment
         idx = min(max(idx, 0), len(I_1)-1)
 
-        volt = U_1[idx]
-        position = idx    
+        volt = U_1[idx] 
         # if the current or voltage is out of range, put everything to zero and end
         if coms.setCurrent(curr, MAX_CUR, MIN_CUR, socket) == -1:
             emergency_off()
