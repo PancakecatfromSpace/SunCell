@@ -11,22 +11,6 @@ SUPPLY_PORT = 8462
 BUFFER_SIZE = 128 # max msg size
 TIMEOUT_SECONDS = 10 # return error if we dont hear from supply within 10 sec
 
-#ranges within which the voltages, currents and power can be set
-"""
-@dataclass
-class Limits:
-    MAX_VOLT: float = 210 # default
-    MIN_VOLT: float = -10
-    MAX_CUR: float = 32    #default
-    MIN_CUR: float = -10
-    MAX_POWER: float = 100
-    MIN_POWER: float = -10
-@dataclass
-class SetPoints:
-    voltage:float = 0
-    current:float = 0
-    power:float = 0
-"""
 set = coms.SetPoints()
 limits = coms.Limits()
 
@@ -72,13 +56,8 @@ curr_slider = Slider(
 plt.ion()
 plt.show()
 
-
 i = 0
 end = 5
-
-
-
-
 
 #set voltage to half the step width of the first value
 set.voltage = U_1[1]/4
@@ -102,18 +81,7 @@ try:
 
         set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
         coms.set_checked(set, limits, socket)
-        """
-        # if the current or voltage is out of range, put everything to zero and end
-        if coms.setCurrent(set.current, Limits.MAX_CUR, Limits.MIN_CUR, socket) == -1:
-            emergency_off(Limits, socket)
-            raise Exception(f"Fault! Attempted to set current {current} outside range [{Limits.MIN_CUR}, {Limits.MAX_CUR}]!")
-        if coms.setVoltage(set.voltage, Limits.MAX_VOLT, Limits.MIN_VOLT, socket) == -1:
-            emergency_off(Limits, socket)
-            raise Exception(f"Fault! Attempted to set voltage {voltage} outside range [{Limits.MIN_VOLT}, {Limits.MAX_VOLT}]!")
-        if coms.setPowerPos(set.power, Limits.MAX_POWER, Limits.MIN_POWER, socket) == -1:
-            emergency_off(Limits, socket)
-            raise Exception(f"Fault! Attempted to set power {power} outside range [{Limits.MIN_POWER}, {Limits.MAX_POWER}]!")
-        """
+
         soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
         ist.set_data([UM], [IM])
 
