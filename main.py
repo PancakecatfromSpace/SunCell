@@ -4,6 +4,7 @@ from matplotlib.widgets import Button, Slider
 import time
 import coms
 import curveutils
+from dataclasses import dataclass 
 
 #values relating to the connection to the power supply
 SUPPLY_IP = "10.30.0.105"
@@ -12,12 +13,21 @@ BUFFER_SIZE = 128 # max msg size
 TIMEOUT_SECONDS = 10 # return error if we dont hear from supply within 10 sec
 
 #ranges within which the voltages, currents and power can be set
-MAX_VOLT = 210 # default
-MIN_VOLT = -10
-MAX_CUR = 32    #default
-MIN_CUR = -10
-MAX_POWER = 100
-MIN_POWER = -10
+@dataclass
+class Limits:
+    MAX_VOLT: float = 210 # default
+    MIN_VOLT: float = -10
+    MAX_CUR: float = 32    #default
+    MIN_CUR: float = -10
+    MAX_POWER: float = 100
+    MIN_POWER: float = -10
+@dataclass
+class SetPoints:
+    voltage:float = 0
+    current:float = 0
+    power:float = 0
+
+set = SetPoints()
 
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
@@ -65,23 +75,23 @@ plt.show()
 i = 0
 end = 5
 
-def emergency_off():
+def emergency_off(limits: Limits, socket:socket):
     """
-    shuts off everything
+    shuts off everything and closes the socket
     """
-    coms.setCurrent(0, MAX_CUR, MIN_CUR, socket)
-    coms.setVoltage(0, MAX_VOLT, MIN_VOLT, socket)
-    coms.setPowerPos(0, MAX_POWER, MIN_POWER, socket)
+    coms.setCurrent(0, limits.MAX_CUR, limits.MIN_CUR, socket)
+    coms.setVoltage(0, limits.MAX_VOLT, limits.MIN_VOLT, socket)
+    coms.setPowerPos(0, limits.MAX_POWER, limits.MIN_POWER, socket)
     coms.closeSocket(socket)
 
-#time.sleep(5)
+
 
 #set voltage to half the step width of the first value
-volt = U_1[1]/4
-curr = I_1[0]*1.1
-power = 10
+set.voltage = U_1[1]/4
+set.current = I_1[0]*1.1
+set.power = 10.0
 
-
+print(set)
 
 try:
     while True:
@@ -91,23 +101,23 @@ try:
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
 
-        volt = curveutils.select_voltage_for_current(U_1, I_1, IM) 
+        set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM) 
         # if the current or voltage is out of range, put everything to zero and end
-        if coms.setCurrent(curr, MAX_CUR, MIN_CUR, socket) == -1:
-            emergency_off()
-            raise Exception(f"Fault! Attempted to set current {curr} outside range [{MIN_CUR}, {MAX_CUR}]!")
-        if coms.setVoltage(volt, MAX_VOLT, MIN_VOLT, socket) == -1:
-            emergency_off()
-            raise Exception(f"Fault! Attempted to set voltage {volt} outside range [{MIN_VOLT}, {MAX_VOLT}]!")
-        if coms.setPowerPos(power, MAX_POWER, MIN_POWER, socket) == -1:
-            emergency_off()
-            raise Exception(f"Fault! Attempted to set power {power} outside range [{MIN_POWER}, {MAX_POWER}]!")
-
-        soll.set_data([volt], [curr])      # <- scalar -> sequence
+        if coms.setCurrent(set.current, Limits.MAX_CUR, Limits.MIN_CUR, socket) == -1:
+            emergency_off(Limits, socket)
+            raise Exception(f"Fault! Attempted to set current {current} outside range [{Limits.MIN_CUR}, {Limits.MAX_CUR}]!")
+        if coms.setVoltage(set.voltage, Limits.MAX_VOLT, Limits.MIN_VOLT, socket) == -1:
+            emergency_off(Limits, socket)
+            raise Exception(f"Fault! Attempted to set voltage {voltage} outside range [{Limits.MIN_VOLT}, {Limits.MAX_VOLT}]!")
+        if coms.setPowerPos(set.power, Limits.MAX_POWER, Limits.MIN_POWER, socket) == -1:
+            emergency_off(Limits, socket)
+            raise Exception(f"Fault! Attempted to set power {power} outside range [{Limits.MIN_POWER}, {Limits.MAX_POWER}]!")
+        print(set.voltage)
+        soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
         ist.set_data([UM], [IM])
 
         measure_label.set_position((UM, IM+I_1.max()*0.05))
-        setpoint_label.set_position((volt, curr+I_1.max()*0.05))
+        setpoint_label.set_position((set.voltage, set.current+I_1.max()*0.05))
 
         fig.canvas.draw_idle()
         fig.canvas.flush_events()
