@@ -4,7 +4,6 @@ from matplotlib.widgets import Button, Slider
 import time
 import coms
 import curveutils
-from dataclasses import dataclass 
 
 #values relating to the connection to the power supply
 SUPPLY_IP = "10.30.0.105"
@@ -13,6 +12,7 @@ BUFFER_SIZE = 128 # max msg size
 TIMEOUT_SECONDS = 10 # return error if we dont hear from supply within 10 sec
 
 #ranges within which the voltages, currents and power can be set
+"""
 @dataclass
 class Limits:
     MAX_VOLT: float = 210 # default
@@ -26,8 +26,9 @@ class SetPoints:
     voltage:float = 0
     current:float = 0
     power:float = 0
-
-set = SetPoints()
+"""
+set = coms.SetPoints()
+limits = coms.Limits()
 
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
@@ -75,14 +76,7 @@ plt.show()
 i = 0
 end = 5
 
-def emergency_off(limits: Limits, socket:socket):
-    """
-    shuts off everything and closes the socket
-    """
-    coms.setCurrent(0, limits.MAX_CUR, limits.MIN_CUR, socket)
-    coms.setVoltage(0, limits.MAX_VOLT, limits.MIN_VOLT, socket)
-    coms.setPowerPos(0, limits.MAX_POWER, limits.MIN_POWER, socket)
-    coms.closeSocket(socket)
+
 
 
 
@@ -91,7 +85,12 @@ set.voltage = U_1[1]/4
 set.current = I_1[0]*1.1
 set.power = 10.0
 
-print(set)
+"""
+#debug stuff to check if the limits trigger properly
+set.voltage = limits.MIN_VOLT
+set.current = limits.MIN_CUR
+set.power = limits.MIN_POWER * 1.1
+"""
 
 try:
     while True:
@@ -101,7 +100,9 @@ try:
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
 
-        set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM) 
+        set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
+        coms.set_checked(set, limits, socket)
+        """
         # if the current or voltage is out of range, put everything to zero and end
         if coms.setCurrent(set.current, Limits.MAX_CUR, Limits.MIN_CUR, socket) == -1:
             emergency_off(Limits, socket)
@@ -112,7 +113,7 @@ try:
         if coms.setPowerPos(set.power, Limits.MAX_POWER, Limits.MIN_POWER, socket) == -1:
             emergency_off(Limits, socket)
             raise Exception(f"Fault! Attempted to set power {power} outside range [{Limits.MIN_POWER}, {Limits.MAX_POWER}]!")
-        print(set.voltage)
+        """
         soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
         ist.set_data([UM], [IM])
 

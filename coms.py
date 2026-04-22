@@ -1,10 +1,25 @@
 import socket
+from dataclasses import dataclass 
 
 # heavily modified version of the example provided by delta electronica
 # communicates via a TCP socket with SCPI commands as found in the programming manual
 
 validSrcList = ["front", "web", "seq", "eth", "slot1", "slot2", "slot3", "slot4", "loc", "rem"]
 
+@dataclass
+class Limits:
+    MAX_VOLT: float = 210 # default
+    MIN_VOLT: float = -10
+    MAX_CUR: float = 32    #default
+    MIN_CUR: float = -10
+    MAX_POWER: float = 100
+    MIN_POWER: float = -10
+
+@dataclass
+class SetPoints:
+    voltage:float = 0
+    current:float = 0
+    power:float = 0
 
 
 
@@ -294,3 +309,24 @@ def closeSocket(supplySocket):
     None
     """
     supplySocket.close()
+
+def set_checked(setpoints:SetPoints, limits:Limits, socket):
+    # if the current or voltage is out of range, put everything to zero and end
+    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set current {setpoints.current} outside range [{limits.MIN_CUR}, {limits.MAX_CUR}]!")
+    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set voltage {setpoints.voltage} outside range [{limits.MIN_VOLT}, {limits.MAX_VOLT}]!")
+    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set power {setpoints.power} outside range [{limits.MIN_POWER}, {limits.MAX_POWER}]!")
+
+def emergency_off(limits: Limits, socket:socket):
+    """
+    shuts off everything and closes the socket
+    """
+    setCurrent(0, limits.MAX_CUR, limits.MIN_CUR, socket)
+    setVoltage(0, limits.MAX_VOLT, limits.MIN_VOLT, socket)
+    setPowerPos(0, limits.MAX_POWER, limits.MIN_POWER, socket)
+    closeSocket(socket)
