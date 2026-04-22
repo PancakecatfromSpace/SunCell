@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import time
 import coms
+import curveutils
 
 #values relating to the connection to the power supply
 SUPPLY_IP = "10.30.0.105"
@@ -18,42 +19,8 @@ MIN_CUR = -10
 MAX_POWER = 100
 MIN_POWER = -10
 
-def solarIV(cell_p:int, cell_s:int, I_s:float, m:float, U_T:float, c_0:float, E:float, steps:int):
-    """
-    calculates the current voltage curve of an array of solar cells
-    
-    Args:
-    cell_p: solar cells in parralel
-    cell_s: solar cells in series
-    I_s: saturation current
-    m: diodefactor
-    U_T: Thermalvoltage
-    c_0: photo current coefficient
-    E: irradiance
-    steps: amount of values to be calculated from minimum to maximum value
-    
-    Returns:
-    U: voltages from min to max
-    I: currents from min to max
-    """
-
-    # implements the simple one diode model since it requires no numeric solution
-    
-    U = np.linspace(0.0, 0.6, steps)
-
-    # vectorized implementation
-    I_ph = c_0 * E
-    diode = I_s * (np.exp(U / (m * U_T)) - 1.0)
-    I = + I_ph - diode
-
-    # amount of solar cells in series and in parralel
-    U = U*cell_s
-    I = I*cell_p
-
-    return U, I
-
 #create two vectors and populate them with the values from a one diode model
-U_1, I_1 = solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
+U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
 
 #populate a vector that is always in the middle between two points within the vector U_1
 U_1_mid = (U_1[:-1] + U_1[1:]) / 2.0
@@ -114,6 +81,8 @@ volt = U_1[1]/4
 curr = I_1[0]*1.1
 power = 10
 
+
+
 try:
     while True:
         #read the slider and update the value
@@ -121,14 +90,8 @@ try:
 
         UM = float(coms.measureVoltage(socket))
         IM = float(coms.measureCurrent(socket))
-        
-        # gpt-5 enhanced code
-        # find insertion index that keeps descending order
-        idx = np.searchsorted(-I_1, -IM, side='right')  # idx in [0..len(I_1)]
-        # clamp to valid indices for selecting nearest segment
-        idx = min(max(idx, 0), len(I_1)-1)
 
-        volt = U_1[idx] 
+        volt = curveutils.select_voltage_for_current(U_1, I_1, IM) 
         # if the current or voltage is out of range, put everything to zero and end
         if coms.setCurrent(curr, MAX_CUR, MIN_CUR, socket) == -1:
             emergency_off()
