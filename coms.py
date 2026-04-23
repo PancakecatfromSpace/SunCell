@@ -330,7 +330,17 @@ def closeSocket(supplySocket):
     """
     supplySocket.close()
 
-def set_checked(setpoints:SetPoints, limits:Limits, socket):
+def set_checked(setpoints:SetPoints, limits:Limits, socket:socket):
+    """
+    Checks if the set points for voltage current and power are within the given limits. Sets the power supply connected to socket to that value.
+
+    Args:
+    setpoints (SetPoints): dataclass containing current voltage and power
+    limits (Lmits): dataclass containing the correstponding limits.
+    socket (socket):  dataclass containting the connected socket.
+    Raises:
+    Exception: if a value of setpoints is out of range set by limits
+    """
     # if the current or voltage is out of range, put everything to zero and end
     if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket) == -1:
         emergency_off(limits, socket)
