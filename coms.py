@@ -7,7 +7,26 @@ from dataclasses import dataclass
 validSrcList = ["front", "web", "seq", "eth", "slot1", "slot2", "slot3", "slot4", "loc", "rem"]
 
 @dataclass
+class SocketVals:
+    """
+    Values the socket requires to communicate with the supply. Contains default values except for the IP Address.
+
+    Args:
+    SUPPLY_IP (str): IP Address of the power supply
+    SUPPLY_PORT (int): Port of the power supply (Default: 8462)
+    TIMOUT_SECONDS (int): Timeout after which the socket is closed (Default: 10 Seconds)
+    BUFFER_SIZE (int): Maximum number of bytes to read from the socket for the response. (Default: 128)
+    """
+    SUPPLY_IP:str
+    SUPPLY_PORT:int = 8462
+    TIMEOUT_SECONDS:int = 10
+    BUFFER_SIZE:int = 128
+
+@dataclass
 class Limits:
+    """
+    Limits within which the supply can accept values, populated with default values.
+    """
     MAX_VOLT: float = 210 # default
     MIN_VOLT: float = -10
     MAX_CUR: float = 32    #default
@@ -17,31 +36,32 @@ class Limits:
 
 @dataclass
 class SetPoints:
+    """
+    Point to which the supply gets set.
+    """
     voltage:float = 0
     current:float = 0
     power:float = 0
 
 
 
-def OpenSocket(SUPPLY_IP: str, SUPPLY_PORT, TIMEOUT_SECONDS: int, BUFFER_SIZE: int):
+def OpenSocket(socketvals:SocketVals):
     """
     Create and return a connected TCP socket.
 
     Args:
-    SUPPLY_IP (str): IPv4 address or hostname of the server to connect to.
-    SUPPLY_PORT (int): TCP port number on the server.
-    TIMEOUT_SECONDS (float): Socket timeout in seconds for blocking operations.
-    BUFFER_SIZE (int): Maximum number of bytes to read from the socket for the response.
+    SocketVals: Dataclass which contains all values needed to establish a connection
 
     Returns:
     socket.socket: A connected TCP socket with timeout set.
 
     """
+
     # Add attribute BUFFER_SIZE to socket.socket before creating an object from it
-    socket.socket.buffer_size = BUFFER_SIZE
+    socket.socket.buffer_size = socketvals.BUFFER_SIZE
     supplySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # set up socket
-    supplySocket.connect((SUPPLY_IP, SUPPLY_PORT)) # connect socket
-    supplySocket.settimeout(TIMEOUT_SECONDS)
+    supplySocket.connect((socketvals.SUPPLY_IP, socketvals.SUPPLY_PORT)) # connect socket
+    supplySocket.settimeout(socketvals.TIMEOUT_SECONDS)
     return supplySocket
 
 
