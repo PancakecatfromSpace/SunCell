@@ -28,12 +28,11 @@ ax.set_ylabel("Current")
 #make a text to move with the point
 measure_label = ax.text(10, 10,"Measured Value")
 setpoint_label = ax.text(10, 10, "Set Value")
+"""
 # adjust placement of plot to make room for slider
 fig.subplots_adjust(bottom=0.25)
-
 # Make a horizontal slider to control current
 axcurr = fig.add_axes([0.25, 0.1, 0.65, 0.03])
-
 curr_slider = Slider(
     ax=axcurr,
     label='Current (amp)',
@@ -41,7 +40,7 @@ curr_slider = Slider(
     valmax=I_1.max()*1.1,
     valinit=I_1.max()/2,
 )
-
+"""
 plt.ion()
 plt.show()
 
