@@ -8,15 +8,10 @@ import curveutils
 set = coms.SetPoints()
 limits = coms.Limits()
 socketvals = coms.SocketVals("10.30.0.105")
+socket = coms.OpenSocket(socketvals)
 
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
-
-#populate a vector that is always in the middle between two points within the vector U_1
-U_1_mid = (U_1[:-1] + U_1[1:]) / 2.0
-I_1_mid = (I_1[:-1] + I_1[1:]) / 2.0
-
-socket = coms.OpenSocket(socketvals)
 
 fig, ax = plt.subplots()
 #points on the plot
@@ -24,7 +19,6 @@ ax.plot(U_1, I_1, color='C0')
 #makes points interactable and updateable
 soll, = ax.plot([], [], marker='o', color='red', markersize=8)
 ist, = ax.plot([], [], marker='o', color='green', markersize=8)
-point3, = ax.plot([], [], marker='o', color='purple', markersize=8)
 #set the limits for the plot to be the max and min values in the vector U_1 and I_1
 ax.set_xlim(U_1.min(), U_1.max())
 ax.set_ylim(0, I_1.max()*1.1)
@@ -58,13 +52,6 @@ end = 5
 set.voltage = U_1[1]/4
 set.current = I_1[0]*1.1
 set.power = 10.0
-
-"""
-#debug stuff to check if the limits trigger properly
-set.voltage = limits.MIN_VOLT
-set.current = limits.MIN_CUR
-set.power = limits.MIN_POWER * 1.1
-"""
 
 try:
     while True:
