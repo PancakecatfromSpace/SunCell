@@ -44,9 +44,6 @@ curr_slider = Slider(
 plt.ion()
 plt.show()
 
-i = 0
-end = 5
-
 #set voltage to half the step width of the first value
 set.voltage = U_1[1]/4
 set.current = I_1[0]*1.1
@@ -73,7 +70,6 @@ try:
         fig.canvas.flush_events()
         
         time.sleep(0.1)
-        i = i + 1
 except KeyboardInterrupt:
     pass
 
