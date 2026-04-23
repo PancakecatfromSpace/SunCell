@@ -135,6 +135,7 @@ def select_voltage_for_current(voltages, currents, measured_current):
     np.all(np.diff(currents) < 0) and np.all(np.diff(currents) > 0) are a clever way to check for monotony, np.diff creates the difference of all neighbouring
     values and fills the answer to the question if it is greater than zero into an array, np.all checks if any of the values in said array is false and if it is
     returns false
+    https://stackoverflow.com/questions/30734258/efficiently-check-if-numpy-ndarray-values-are-strictly-increasing
     """
     if np.all(np.diff(currents) < 0):
         # finds index where the voltage should be placed when decreasing monotonely
