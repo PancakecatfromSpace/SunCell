@@ -43,6 +43,31 @@ class SetPoints:
     current:float = 0
     power:float = 0
 
+@dataclass
+class measuredPoints:
+    """
+    Points the supply meassured.
+    """
+    voltage:float = 0
+    current:float = 0
+    power:float = 0
+
+class SupplyCommunication:
+    def __init__(self, IP:str):
+        self.socketvalues = SocketVals(IP)
+        self.valuelimits = Limits()
+        self.setpoints = SetPoints()
+        self.socket = OpenSocket(self.socketvalues)
+        self.measuredpoints = measuredPoints()
+    def setValues(self, U:float, I:float, P: float):
+        self.setpoints.voltage = U
+        self.setpoints.current = I
+        self.setpoints.power = P
+        set_checked(self.setpoints, self.valuelimits, self.socket)
+    def measureValues(self):
+        self.measuredpoints.voltage = float(measureVoltage(self.socket))
+        self.measuredpoints.current = float(measureCurrent(self.socket))
+        self.measuredpoints.poiwer = float(measurePower(self.socket))
 
 
 def OpenSocket(socketvals:SocketVals):
