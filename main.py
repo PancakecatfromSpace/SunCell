@@ -4,6 +4,7 @@ from matplotlib.widgets import Button, Slider
 import time
 import coms
 import curveutils
+from functools import partial
 
 set = coms.SetPoints()
 limits = coms.Limits()
@@ -49,28 +50,32 @@ set.voltage = U_1[1]/4
 set.current = I_1[0]*1.1
 set.power = 10.0
 
-try:
-    while True:
-        #read the slider and update the value
-        #current_slider = curr_slider.val
+def update_supply(socket):
+    #read the slider and update the value
+    #current_slider = curr_slider.val
 
-        UM = float(coms.measureVoltage(socket))
-        IM = float(coms.measureCurrent(socket))
+    UM = float(coms.measureVoltage(socket))
+    IM = float(coms.measureCurrent(socket))
 
-        set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
-        coms.set_checked(set, limits, socket)
+    set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
+    coms.set_checked(set, limits, socket)
 
-        soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
-        ist.set_data([UM], [IM])
+def update_gui():
+    soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
+    ist.set_data([UM], [IM])
 
-        measure_label.set_position((UM, IM+I_1.max()*0.05))
-        setpoint_label.set_position((set.voltage, set.current+I_1.max()*0.05))
+    measure_label.set_position((UM, IM+I_1.max()*0.05))
+    setpoint_label.set_position((set.voltage, set.current+I_1.max()*0.05))
 
-        fig.canvas.draw_idle()
-        fig.canvas.flush_events()
-        
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    pass
+    fig.canvas.draw_idle()
+    #fig.canvas.flush_events()
+#time.sleep(5)
 
-coms.closeSocket(socket)
+timer = fig.canvas.new_timer(interval=100) #interval is time in miliseconds
+timer.add_callback(lambda: update_supply(socket))
+timer.add_callback(lambda: update_gui())
+timer.start()
+
+plt.show(block=True)
+
+#coms.closeSocket(socket)
