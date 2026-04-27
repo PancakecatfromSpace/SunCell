@@ -6,10 +6,14 @@ import coms
 import curveutils
 from functools import partial
 
+"""
 set = coms.SetPoints()
 limits = coms.Limits()
 socketvals = coms.SocketVals("10.30.0.105")
 socket = coms.OpenSocket(socketvals)
+"""
+
+supply = coms.SupplyCommunication("10.30.0.105")
 
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 500)
@@ -46,33 +50,37 @@ plt.ion()
 plt.show()
 
 #set voltage to half the step width of the first value
-set.voltage = U_1[1]/4
+"""set.voltage = U_1[1]/4
 set.current = I_1[0]*1.1
-set.power = 10.0
+set.power = 10.0"""
+#eddited the value of the initial voltage to 5, by suggestion of Rüdiger Mann 27.04.26
+supply.setValues(5, I_1[0]*1.1, 3000.0)
 
-def update_supply(socket):
+def update_supply():
     #read the slider and update the value
     #current_slider = curr_slider.val
 
-    UM = float(coms.measureVoltage(socket))
-    IM = float(coms.measureCurrent(socket))
+    """UM = float(coms.measureVoltage(socket))
+    IM = float(coms.measureCurrent(socket))"""
+    supply.measureValues()
 
-    set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
-    coms.set_checked(set, limits, socket)
+    """set.voltage = curveutils.select_voltage_for_current(U_1, I_1, IM)
+    coms.set_checked(set, limits, socket)"""
+    supply.setValues(curveutils.select_voltage_for_current(U_1, I_1, supply.measuredpoints.current))
 
 def update_gui():
-    soll.set_data([set.voltage], [set.current])      # <- scalar -> sequence
-    ist.set_data([UM], [IM])
+    soll.set_data([supply.setpoints.voltage], [supply.setpoints.current])      # <- scalar -> sequence
+    ist.set_data([supply.measuredpoints.voltage], [supply.measuredpoints.current])
 
-    measure_label.set_position((UM, IM+I_1.max()*0.05))
-    setpoint_label.set_position((set.voltage, set.current+I_1.max()*0.05))
+    measure_label.set_position((supply.measuredpoints.voltage, supply.measuredpoints.current+I_1.max()*0.05))
+    setpoint_label.set_position((supply.setpoints.voltage, supply.setpoints.current+I_1.max()*0.05))
 
     fig.canvas.draw_idle()
     #fig.canvas.flush_events()
 #time.sleep(5)
 
 timer = fig.canvas.new_timer(interval=100) #interval is time in miliseconds
-timer.add_callback(lambda: update_supply(socket))
+timer.add_callback(lambda: update_supply())
 timer.add_callback(lambda: update_gui())
 timer.start()
 
