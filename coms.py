@@ -35,36 +35,31 @@ class Limits:
     MIN_POWER: float = -10
 
 @dataclass
-class SetPoints:
+class VCP:
     """
-    Point to which the supply gets set.
+    Stores Values for voltage current and power
     """
     voltage:float = 0
     current:float = 0
     power:float = 0
 
-@dataclass
-class measuredPoints:
-    """
-    Points the supply meassured.
-    """
-    voltage:float = 0
-    current:float = 0
-    power:float = 0
 
 class SupplyCommunication:
     """
-    Handles communication with power supply. 
+    Handles communication with power supply.
+    
+    Args:
+        IP(str): IP Address as String, in the Format: 192.168.178.1, expects no subnet mask!
     """
     def __init__(self, IP:str, port = SocketVals.SUPPLY_PORT, timeout = SocketVals.TIMEOUT_SECONDS):
         """
-        Initialzie the communication. All attributes but IP are optional. None specified attributes will be read from dataclass SocketVals.
+        Initialzie the communication. All attributes but IP are optional. Not specified attributes will be read from dataclass SocketVals.
         """
         self.socketvalues = SocketVals(IP, port, timeout)
         self.valuelimits = Limits()
-        self.setpoints = SetPoints()
+        self.setpoints = VCP()
         self.socket = OpenSocket(self.socketvalues)
-        self.measuredpoints = measuredPoints()
+        self.measuredpoints = VCP()
     def setValues(self, U = None, I = None, P = None):
         """
         Sets all values, checks if value is within self.valuelimits. 
@@ -403,7 +398,7 @@ def closeSocket(supplySocket):
     """
     supplySocket.close()
 
-def set_checked(setpoints:SetPoints, limits:Limits, socket:socket):
+def set_checked(setpoints:VCP, limits:Limits, socket:socket):
     """
     Checks if the set points for voltage current and power are within the given limits. Sets the power supply connected to socket to that value.
 
