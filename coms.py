@@ -1,8 +1,10 @@
 import socket
+import pyvisa
 from dataclasses import dataclass
 
 # heavily modified version of the example provided by delta electronica
 # communicates via a TCP socket with SCPI commands as found in the programming manual
+# also adds VISA devices as a possible alternative
 
 validSrcList = ["front", "web", "seq", "eth", "slot1", "slot2", "slot3", "slot4", "loc", "rem"]
 
@@ -58,7 +60,12 @@ class SupplyCommunication:
         self.socketvalues = SocketVals(IP, port, timeout)
         self.valuelimits = Limits()
         self.setpoints = VCP()
-        self.socket = OpenSocket(self.socketvalues)
+        if CheckVISA(IP):
+            self.socket = OpenVISASocket(self.socketvalues)
+            self.type = "VISA_TCP"
+        else:
+            self.socket = OpenSocket(self.socketvalues)
+            self.type = "RAW_TCP"
         self.measuredpoints = VCP()
     def setValues(self, U = None, I = None, P = None):
         """
@@ -75,7 +82,7 @@ class SupplyCommunication:
             self.setpoints.current = I
         if P is not None:
             self.setpoints.power = P
-        set_checked(self.setpoints, self.valuelimits, self.socket)
+        set_checked(self.setpoints, self.valuelimits, self.socket, self.type)
     def setLimits(self, limits:Limits):
         """
         Set limits to limits. Expects Limits data object. Checks if each MIN limit is smaller and not equal to the MAX limit.
@@ -132,6 +139,48 @@ def OpenSocket(socketvals:SocketVals):
     supplySocket.settimeout(socketvals.TIMEOUT_SECONDS)
     return supplySocket
 
+def OpenVISASocket(socketvals:SocketVals):
+    """
+    Create and return a connected TCP VISA socket.
+
+    Args:
+    SocketVals: Dataclass which contains all values needed to establish a connection, all values except SUPPLY_IP are ignored since they are not necessary.
+
+    Returns:
+    socket.socket: A connected TCP socket with timeout set.
+
+    """
+    # check all available instruments that are visa, specifies to use the PyVISA-py backend
+    rm = pyvisa.ResourceManager('@py')
+    # search all available VISA devices for a TCPIP device matching the IP set in SocketVals
+    matching_available_devices = rm.list_resources(f"TCPIP::{socketvals.SUPPLY_IP}")
+    # put amount of matching devices in own 
+    matching_devices_amount = len(matching_available_devices)
+    match matching_devices_amount:
+        case 0:
+            raise Exception(f"Error! No VISA TCP/IP Device matching the IP: {socketvals.SUPPLY_IP}!")
+        case 1:
+            #print(matching_available_devices[0])
+            VISASocket = rm.open_resource(matching_available_devices[0])
+        case _:
+            raise Exception(f"Error! {matching_devices_amount} Devices matching the IP Address! Matching devices: {matching_available_devices}")
+
+    return VISASocket
+
+def CheckVISA(IP: str):
+    """
+    Checks if there is a VISA device with a matching IP Address.
+
+    Args:
+    IP(str): IP Address that is to be checked.
+    Returns:
+    TRUE: IP Address belongs to one or more VISA devices.
+    FALSE: IP Address doesn't belong to a VISA device.
+    """
+    if len(pyvisa.ResourceManager('@py').list_resources(f"TCPIP::{IP}")) > 0:
+        return True
+    return False
+
 
 def sendAndReceiveCommand(msg: str, supplySocket) -> str:
     """
@@ -151,20 +200,24 @@ def sendAndReceiveCommand(msg: str, supplySocket) -> str:
 
 
 # set value without receiving a response
-def sendCommand(msg: str, supplySocket) -> None:
+def sendCommand(msg: str, supplySocket, type:str) -> None:
     """
     Send a command string over a socket.
 
     Args:
     msg (str): Command text to send (without trailing newline). A newline will be appended automatically.
     supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+    type (string): Type of the communication, e.g.: VISA_TCP, RAW_TCP
 
     Returns:
     None
     """
-
-    msg =  msg + "\n"
-    supplySocket.sendall(msg.encode("UTF-8"))
+    match type:
+        case "RAW_TCP":
+            msg =  msg + "\n"
+            supplySocket.sendall(msg.encode("UTF-8"))
+        case "VISA_TCP":
+            supplySocket.write(msg)
 
 
 def setRemoteShutdownState(state:bool, supplySocket):
@@ -183,7 +236,7 @@ def setRemoteShutdownState(state:bool, supplySocket):
         sendCommand("SYST:RSD 0", supplySocket)
 
 
-def setVoltage(volt:float, MAX_VOLT:float, MIN_VOLT:float, supplySocket) -> int:
+def setVoltage(volt:float, MAX_VOLT:float, MIN_VOLT:float, supplySocket, type:str) -> int:
     """
     Sets the voltage to the specified value if it is within the allowed range.
 
@@ -192,13 +245,14 @@ def setVoltage(volt:float, MAX_VOLT:float, MIN_VOLT:float, supplySocket) -> int:
     MAX_VOLT (float): The maximum allowed voltage.
     MIN_VOLT (float): The minimum allowed voltage.
     supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+    type (string): Type of the communication, e.g.: VISA_TCP, RAW_TCP
 
     Returns:
     int: 0 if the voltage was set successfully, -1 if the voltage is out of range.
     """
     retval = 0
     if volt >= MIN_VOLT and volt <= MAX_VOLT:
-        sendCommand("SOUR:VOLT {0}".format(volt), supplySocket)
+        sendCommand("SOUR:VOLT {0}".format(volt), supplySocket,type)
     else:
 
         retval = -1
@@ -206,7 +260,7 @@ def setVoltage(volt:float, MAX_VOLT:float, MIN_VOLT:float, supplySocket) -> int:
     return retval
 
 
-def setCurrent(cur:float, MAX_CUR:float, MIN_CUR:float, supplySocket) -> int:
+def setCurrent(cur:float, MAX_CUR:float, MIN_CUR:float, supplySocket, type:str) -> int:
     """
     Sets the current to the specified value if it is within the allowed range.
 
@@ -215,19 +269,20 @@ def setCurrent(cur:float, MAX_CUR:float, MIN_CUR:float, supplySocket) -> int:
     MAX_CUR (float): The maximum allowed current.
     MIN_CUR (float): The minimum allowed current.
     supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+    type (string): Type of the communication, e.g.: VISA_TCP, RAW_TCP
 
     Returns:
     int: 0 if the current was set successfully, -1 if the current is out of range.
     """
     retval = 0
     if cur >= MIN_CUR and cur <= MAX_CUR:
-        sendCommand("SOUR:CUR {0}".format(cur), supplySocket)
+        sendCommand("SOUR:CUR {0}".format(cur), supplySocket, type)
     else:
         retval = -1
 
     return retval
 # set positive power, check if command is given valid number
-def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket):
+def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket, type:str):
     """
     Sets the power to the specified value if it is within the allowed range.
 
@@ -236,13 +291,14 @@ def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket):
     MAX_POWER (float): The maximum allowed power.
     MIN_POWER (float): The minimum allowed power.
     supplySocket: The socket to which the command should be sent.
+    type (string): Type of the communication, e.g.: VISA_TCP, RAW_TCP
 
     Returns:
     int: 0 if the power was set successfully, -1 if the power is out of range.
     """
     retval = 0
     if power >= MIN_POWER and power <= MAX_POWER:
-        sendCommand("SOUR:POW {0}".format(power), supplySocket)
+        sendCommand("SOUR:POW {0}".format(power), supplySocket, type)
     else:
         retval = -1
     return retval
@@ -398,7 +454,7 @@ def closeSocket(supplySocket):
     """
     supplySocket.close()
 
-def set_checked(setpoints:VCP, limits:Limits, socket:socket):
+def set_checked(setpoints:VCP, limits:Limits, socket:socket,type:str):
     """
     Checks if the set points for voltage current and power are within the given limits. Sets the power supply connected to socket to that value.
 
@@ -410,13 +466,13 @@ def set_checked(setpoints:VCP, limits:Limits, socket:socket):
     Exception: if a value of setpoints is out of range set by limits
     """
     # if the current or voltage is out of range, put everything to zero and end
-    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket) == -1:
+    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket, type) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set current {setpoints.current} outside range [{limits.MIN_CUR}, {limits.MAX_CUR}]!")
-    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket) == -1:
+    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket, type) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set voltage {setpoints.voltage} outside range [{limits.MIN_VOLT}, {limits.MAX_VOLT}]!")
-    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket) == -1:
+    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket, type) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set power {setpoints.power} outside range [{limits.MIN_POWER}, {limits.MAX_POWER}]!")
 
