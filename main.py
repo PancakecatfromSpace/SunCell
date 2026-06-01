@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import time
-import coms
+import driver_scpi_tcp as coms
 import curveutils
 from functools import partial
 

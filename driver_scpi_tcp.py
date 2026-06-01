@@ -1,13 +1,10 @@
 import socket
-from shared import SocketVals, Limits, VCP
-
+from shared import SocketVals, VCP, Limits
 
 # heavily modified version of the example provided by delta electronica
 # communicates via a TCP socket with SCPI commands as found in the programming manual
 
 validSrcList = ["front", "web", "seq", "eth", "slot1", "slot2", "slot3", "slot4", "loc", "rem"]
-
-
 
 
 class SupplyCommunication:
@@ -77,7 +74,6 @@ class SupplyCommunication:
         WARNING! No checks are performed when calling this method. Result will not be saved in object.
         """
         return sendAndReceiveCommand(command, self.socket)
-
 
 def OpenSocket(socketvals:SocketVals):
     """

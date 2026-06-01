@@ -1,5 +1,6 @@
 # shared dataclasses used by both VISA and raw TCP/IP drivers
 from dataclasses import dataclass
+
 @dataclass
 class SocketVals:
     """
