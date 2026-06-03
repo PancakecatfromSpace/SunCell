@@ -1,79 +1,10 @@
 import socket
 from shared import SocketVals, VCP, Limits
 
-# heavily modified version of the example provided by delta electronica
+# heavily modified version of the example provided by delta electronica, designed to work with DE SM210-cp-150 power supply
 # communicates via a TCP socket with SCPI commands as found in the programming manual
 
 validSrcList = ["front", "web", "seq", "eth", "slot1", "slot2", "slot3", "slot4", "loc", "rem"]
-
-
-class SupplyCommunication:
-    """
-    Handles communication with power supply.
-    
-    Args:
-        IP(str): IP Address as String, in the Format: 192.168.178.1, expects no subnet mask!
-    """
-    def __init__(self, IP:str, port = SocketVals.SUPPLY_PORT, timeout = SocketVals.TIMEOUT_SECONDS):
-        """
-        Initialzie the communication. All attributes but IP are optional. Not specified attributes will be read from dataclass SocketVals.
-        """
-        self.socketvalues = SocketVals(IP, port, timeout)
-        self.valuelimits = Limits()
-        self.setpoints = VCP()
-        self.socket = OpenSocket(self.socketvalues)
-        self.measuredpoints = VCP()
-    def setValues(self, U = None, I = None, P = None):
-        """
-        Sets all values, checks if value is within self.valuelimits. 
-        All Values are optional. If none given the method will take the last value given. If none are given standard values from dataclass will be used.
-        Attributes:
-            U (float): Voltage to set the output to
-            I (float): Current to set the output to
-            P (float): Power to set the output to
-        """
-        if U is not None:
-            self.setpoints.voltage = U
-        if I is not None:
-            self.setpoints.current = I
-        if P is not None:
-            self.setpoints.power = P
-        set_checked(self.setpoints, self.valuelimits, self.socket)
-    def setLimits(self, limits:Limits):
-        """
-        Set limits to limits. Expects Limits data object. Checks if each MIN limit is smaller and not equal to the MAX limit.
-        Attributes:
-            limits (Limits): Object of the class Limits
-        Raises:
-            Exception: if any MIN value is larger or euqal to a MAX value the programm will crash
-        """
-        if limits.MIN_VOLT >= limits.MAX_VOLT:
-            raise Exception(f"Error! MIN_VOLT ({limits.MIN_VOLT}) larger or equal to MAX_VOLT ({limits.MAX_VOLT})")
-        if limits.MIN_CUR >= limits.MAX_CUR:
-            raise Exception(f"Error! MIN_CUR ({limits.MIN_CUR}) larger or equal to MAX_CUR ({limits.MAX_CUR})")
-        if limits.MIN_POWER >= limits.MAX_POWER:
-            raise Exception(f"Error! MIN_CUR ({limits.MIN_POWER}) larger or equal to MAX_CUR ({limits.MAX_POWER})")
-        self.valuelimits = limits
-    def measureValues(self):
-        """
-        Measures all voltages and saves the result in self.measuredpoints
-        """
-        self.measuredpoints.voltage = float(measureVoltage(self.socket))
-        self.measuredpoints.current = float(measureCurrent(self.socket))
-        self.measuredpoints.power = float(measurePower(self.socket))
-    def sendOnly(self, command:str):
-        """
-        Send raw scpi command to supply without expecting a response. 
-        WARNING! No checks are performed when calling this method.
-        """
-        sendCommand(command, self.socket)
-
-    def sendReceive(self, command:str) -> str:
-        """
-        Send raw scpi command to supply and output response as string.
-        WARNING! No checks are performed when calling this method. Result will not be saved in object.
-        """
-        return sendAndReceiveCommand(command, self.socket)
 
 def OpenSocket(socketvals:SocketVals):
     """
