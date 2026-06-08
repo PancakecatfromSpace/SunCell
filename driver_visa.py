@@ -28,3 +28,19 @@ def OpenSocket(socketvals:SocketVals):
             raise Exception(f"Error! {matching_devices_amount} Devices matching the IP Address! Matching devices: {matching_available_devices}")
 
     return VISASocket
+
+def sendAndReceiveCommand(msg: str, supplySocket) -> str:
+    """
+    Send a command string over a socket, then receive and return the response.
+
+    Args:
+    msg (str): Command text to send (without trailing newline). A newline will be appended automatically.
+    supplySocket: object of class socket.socket
+
+    Returns:
+    str: Decoded response from the socket with trailing newline and whitespace stripped.
+
+    """
+    msg =  msg + "\n"
+    #supplySocket.sendall(msg.encode("UTF-8"))
+    return supplySocket.query(msg)
