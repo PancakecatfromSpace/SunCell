@@ -25,7 +25,7 @@ def OpenSocket(socketvals:SocketVals):
             match socketvals.CMD_LOOKUP:
                 case "tti":
                     #This is stupid but necessary if the supply has a half assed implementation of the full VXI-11 Standard. 
-                    #In this case the manufacturer TTI didn't bother to implement the VXI-11 Dicovery Protocoll. 
+                    #In this case the manufacturer TTI didn't bother to implement the VXI-11 Dicovery Protocoll properly. 
                     #See QPX1200S_SP Manual under the sections VXI-11 Discovery Protocoll and VISA Resource-Name for more details.
                     VISASocket = rm.open_resource(f"TCPIP::{socketvals.SUPPLY_IP}::{socketvals.SUPPLY_PORT}::SOCKET")
 
@@ -51,5 +51,20 @@ def sendAndReceiveCommand(msg: str, supplySocket) -> str:
 
     """
     msg =  msg + "\n"
-    #supplySocket.sendall(msg.encode("UTF-8"))
     return supplySocket.query(msg)
+
+# set value without receiving a response
+def sendCommand(msg: str, supplySocket) -> None:
+    """
+    Send a command string over a socket.
+
+    Args:
+    msg (str): Command text to send (without trailing newline). A newline will be appended automatically.
+    supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+
+    Returns:
+    None
+    """
+
+    msg =  msg + "\n"
+    supplySocket.write(msg)
