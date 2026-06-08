@@ -10,7 +10,7 @@ def OpenSocket(socketvals:SocketVals):
     """
     Create and return a connected TCP socket.
 
-    Args:
+    Args:socket
     SocketVals: Dataclass which contains all values needed to establish a connection
 
     Returns:
@@ -291,7 +291,7 @@ def closeSocket(supplySocket):
     """
     supplySocket.close()
 
-def set_checked(setpoints:VCP, limits:Limits, socket:socket):
+def set_checked(setpoints:VCP, limits:Limits, socket:socket, socketvals:SocketVals):
     """
     Checks if the set points for voltage current and power are within the given limits. Sets the power supply connected to socket to that value.
 

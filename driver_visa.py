@@ -68,3 +68,106 @@ def sendCommand(msg: str, supplySocket) -> None:
 
     msg =  msg + "\n"
     supplySocket.write(msg)
+
+def setVoltage(volt:float, MAX_VOLT:float, MIN_VOLT:float, supplySocket, lookup:str) -> int:
+    """
+    Sets the voltage to the specified value if it is within the allowed range.
+
+    Args:
+    volt (float): The voltage value to set.
+    MAX_VOLT (float): The maximum allowed voltage.
+    MIN_VOLT (float): The minimum allowed voltage.
+    supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+    lookup (str): Specify which command is to be used to set the voltage. Currently implemented: tti.
+
+    Returns:
+    int: 0 if the voltage was set successfully, -1 if the voltage is out of range.
+    """
+    retval = 0
+    match lookup:
+        case "tti":
+            cmd = "V1 "
+        case _:
+            raise Exception("ERROR! Specified Command lookup couldn't be found.")
+    if volt >= MIN_VOLT and volt <= MAX_VOLT:
+        sendCommand(f"{cmd}{volt}", supplySocket)
+    else:
+
+        retval = -1
+
+    return retval
+
+def setCurrent(cur:float, MAX_CUR:float, MIN_CUR:float, supplySocket, lookup:str) -> int:
+    """
+    Sets the current to the specified value if it is within the allowed range.
+
+    Args:
+    cur (float): The current value to set.
+    MAX_CUR (float): The maximum allowed current.
+    MIN_CUR (float): The minimum allowed current.
+    supplySocket: Connected socket-like object with .sendall(bytes) method (e.g., socket.socket).
+    lookup (str): Specify which command is to be used to set the voltage. Currently implemented: tti.
+
+    Returns:
+    int: 0 if the current was set successfully, -1 if the current is out of range.
+    """
+    retval = 0
+    match lookup:
+        case "tti":
+            cmd = "I1 "
+        case _:
+            raise Exception("ERROR! Specified Command lookup couldn't be found.")
+    if cur >= MIN_CUR and cur <= MAX_CUR:
+        sendCommand(f"{cmd}{cur}", supplySocket)
+    else:
+        retval = -1
+    
+    return retval
+
+def setPowerPos(power:float, MAX_POWER:float, MIN_POWER:float, supplySocket, lookup:str) -> int:
+    """
+    Sets the power to the specified value if it is within the allowed range.
+
+    Args:
+    power (float): The power value to set.
+    MAX_POWER (float): The maximum allowed power.
+    MIN_POWER (float): The minimum allowed power.
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    int: 0 if the power was set successfully, -1 if the power is out of range.
+    """
+    retval = 0
+    match lookup:
+        #the tti power supply has no concept of max power, therefore don't do anything and return 0
+        case "tti":
+            return retval
+        case _:
+            raise Exception("ERROR! Specified Command lookup couldn't be found.")
+    if power >= MIN_POWER and power <= MAX_POWER:
+        sendCommand(f"{cmd}{power}", supplySocket)
+    else:
+        retval = -1
+    return retval
+
+def set_checked(setpoints:VCP, limits:Limits, socket, lookup:str):
+    """
+    Checks if the set points for voltage current and power are within the given limits. Sets the power supply connected to socket to that value.
+
+    Args:
+    setpoints (SetPoints): dataclass containing current voltage and power
+    limits (Lmits): dataclass containing the correstponding limits.
+    socket (socket):  dataclass containting the connected socket.
+    Raises:
+    Exception: if a value of setpoints is out of range set by limits
+    """
+    # if the current or voltage is out of range, put everything to zero and end
+    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket,lookup) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set current {setpoints.current} outside range [{limits.MIN_CUR}, {limits.MAX_CUR}]!")
+    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket,lookup) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set voltage {setpoints.voltage} outside range [{limits.MIN_VOLT}, {limits.MAX_VOLT}]!")
+    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket,lookup) == -1:
+        emergency_off(limits, socket)
+        raise Exception(f"Fault! Attempted to set power {setpoints.power} outside range [{limits.MIN_POWER}, {limits.MAX_POWER}]!")

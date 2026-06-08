@@ -41,7 +41,7 @@ class Limits:
 @dataclass
 class VCP:
     """
-    Stores Values for voltage current and power
+    Stores Values for voltage current and power, the used TTI Instrument has no concept of power, therefore the value is ignored
     """
     voltage:float = 0
     current:float = 0
