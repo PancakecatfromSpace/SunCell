@@ -66,7 +66,7 @@ class SupplyCommunication:
             self.setpoints.current = I
         if P is not None:
             self.setpoints.power = P
-        self.driver.set_checked(self.setpoints, self.valuelimits, self.socket)
+        self.driver.set_checked(self.setpoints, self.valuelimits, self.socket, self.socketvalues.CMD_LOOKUP)
     def setLimits(self, limits:shared.Limits):
         """
         Set limits to limits. Expects Limits data object. Checks if each MIN limit is smaller and not equal to the MAX limit.
