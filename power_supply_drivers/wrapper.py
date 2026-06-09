@@ -1,5 +1,5 @@
 #wraps the drivers into a class that can be called to edit the values within the power supply, currently designed to work with a DE SM210-CP-150 and TTI QPX1200SP
-import shared
+import power_supply_drivers.shared as shared
 
 class SupplyCommunication:
     """
@@ -30,22 +30,22 @@ class SupplyCommunication:
                 # if neither is found, crash accordingly
                 if shared.CheckVISA(self.socketvalues.SUPPLY_IP):
                     self.socketvalues.TYPE = "VISA_TTI"
-                    import driver_visa
+                    import power_supply_drivers.driver_visa as driver_visa
                     self.driver = driver_visa
                     print("VISA Device detected.")
                 elif shared.CheckTCP(self.socketvalues.SUPPLY_IP, self.socketvalues.SUPPLY_PORT):
                     self.socketvalues.TYPE = "DE"
-                    import driver_scpi_tcp
+                    import power_supply_drivers.driver_scpi_tcp as driver_scpi_tcp
                     self.driver = driver_scpi_tcp
                     print("DE TCP Device detected.")
                 else:
                     raise Exception(f"Error! Neither VISA device nor TCP/IP Device found with Address: {self.socketvalues.SUPPLY_IP}:{self.socketvalues.SUPPLY_PORT} Auto connection failed.")
             # Skips the auto detection and instantly loads a driver
             case "VISA":
-                import driver_visa
+                import power_supply_drivers.driver_visa as driver_visa
                 self.driver = driver_visa
             case "DE":
-                import driver_scpi_tcp
+                import power_supply_drivers.driver_scpi_tcp as driver_scpi_tcp
                 self.driver = driver_scpi_tcp
             case _:
                 raise Exception(f"Error! Socket Type {self.socketvalues.TYPE} is an invalid choice!")

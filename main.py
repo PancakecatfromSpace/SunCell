@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import time
-import wrapper as coms
+import power_supply_drivers.wrapper as coms
 import curveutils
 from functools import partial
 

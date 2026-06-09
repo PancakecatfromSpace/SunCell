@@ -1,5 +1,5 @@
 import socket
-from shared import SocketVals, VCP, Limits
+from power_supply_drivers.shared import SocketVals, VCP, Limits
 
 # heavily modified version of the example provided by delta electronica, designed to work with DE SM210-cp-150 power supply
 # communicates via a TCP socket with SCPI commands as found in the programming manual

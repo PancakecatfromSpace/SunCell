@@ -1,4 +1,4 @@
-from shared import SocketVals, VCP, Limits
+from power_supply_drivers.shared import SocketVals, VCP, Limits
 import pyvisa
 
 def OpenSocket(socketvals:SocketVals):
