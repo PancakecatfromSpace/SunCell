@@ -31,11 +31,11 @@ class Limits:
     """
     Limits within which the supply can accept values, populated with default values.
     """
-    MAX_VOLT: float = 210 # default
+    MAX_VOLT: float = 60 # default
     MIN_VOLT: float = -10
-    MAX_CUR: float = 32    #default
+    MAX_CUR: float = 35    #default
     MIN_CUR: float = -10
-    MAX_POWER: float = 3000
+    MAX_POWER: float = 1500
     MIN_POWER: float = -10
 
 @dataclass

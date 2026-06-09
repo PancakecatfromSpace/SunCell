@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider
 import time
-import driver_scpi_tcp as coms
+import wrapper as coms
 import curveutils
 from functools import partial
 
-supply = coms.SupplyCommunication("10.30.0.105") # connect to power supply with this IP Address
+supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 
 #create two vectors and populate them with the values from a one diode model
-U_1, I_1 = curveutils.solarIV(5, 300, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 250)
+U_1, I_1 = curveutils.solarIV(10, 90, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 250)
 
 fig, ax = plt.subplots()
 #points on the plot
