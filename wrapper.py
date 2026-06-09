@@ -102,3 +102,6 @@ class SupplyCommunication:
         WARNING! No checks are performed when calling this method. Result will not be saved in object.
         """
         return self.driver.sendAndReceiveCommand(command, self.socket)
+
+    def __del__(self):
+        self.driver.closeSocket(self.socket)

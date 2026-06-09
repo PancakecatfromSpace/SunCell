@@ -162,12 +162,71 @@ def set_checked(setpoints:VCP, limits:Limits, socket, lookup:str):
     Exception: if a value of setpoints is out of range set by limits
     """
     # if the current or voltage is out of range, put everything to zero and end
-    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket,lookup) == -1:
+    if setCurrent(setpoints.current, limits.MAX_CUR, limits.MIN_CUR, socket, lookup) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set current {setpoints.current} outside range [{limits.MIN_CUR}, {limits.MAX_CUR}]!")
-    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket,lookup) == -1:
+    if setVoltage(setpoints.voltage, limits.MAX_VOLT, limits.MIN_VOLT, socket, lookup) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set voltage {setpoints.voltage} outside range [{limits.MIN_VOLT}, {limits.MAX_VOLT}]!")
-    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket,lookup) == -1:
+    if setPowerPos(setpoints.power, limits.MAX_POWER, limits.MIN_POWER, socket, lookup) == -1:
         emergency_off(limits, socket)
         raise Exception(f"Fault! Attempted to set power {setpoints.power} outside range [{limits.MIN_POWER}, {limits.MAX_POWER}]!")
+
+def closeSocket(supplySocket):
+    """
+    Closes the socket and ends the connection the power supply.
+
+    Args:
+    supplySocket: The socket to which the command should be sent.   
+
+    Returns:
+    None
+    """
+    print("VISA Socket closed.")
+    supplySocket.close()
+
+def emergency_off(limits: Limits, socket):
+    """
+    shuts off everything and closes the socket
+    """
+    setCurrent(0, limits.MAX_CUR, limits.MIN_CUR, socket, "tti")
+    setVoltage(0, limits.MAX_VOLT, limits.MIN_VOLT, socket, "tti")
+    setPowerPos(0, limits.MAX_POWER, limits.MIN_POWER, socket, "tti")
+    closeSocket(socket)
+
+def measureVoltage(supplySocket) -> float:
+    """
+    Query the measured output Voltage
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output voltage parsed from the device response.
+    """
+    
+    return float(sendAndReceiveCommand("V1O?",supplySocket)[:-1])
+
+def measureCurrent(supplySocket) -> float:
+    """
+    Query the measured output Current
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output current parsed from the device response.
+    """
+    return float(sendAndReceiveCommand("I1O?",supplySocket)[:-1])
+
+def measurePower(supplySocket) -> float:
+    """
+    Query the measured output Power
+
+    Args:
+    supplySocket: The socket to which the command should be sent.
+
+    Returns:
+    float: The measured output power parsed from the device response.
+    """
+    return float(sendAndReceiveCommand("I1O?",supplySocket)[:-1])*float(sendAndReceiveCommand("V1O?",supplySocket)[:-1])
