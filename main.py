@@ -11,6 +11,8 @@ supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, ty
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(10, 90, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 250)
 
+I_1 = curveutils.reduce_steps(I_1,0.1)
+
 fig, ax = plt.subplots()
 #points on the plot
 ax.plot(U_1, I_1, color='C0')
@@ -65,7 +67,7 @@ def update_gui():
     #fig.canvas.flush_events()
 #time.sleep(5)
 
-timer = fig.canvas.new_timer(interval=500) #interval is time in miliseconds
+timer = fig.canvas.new_timer(interval=50) #interval is time in miliseconds
 timer2 = fig.canvas.new_timer(interval=1)
 timer.add_callback(lambda: update_supply())
 timer2.add_callback(lambda: update_gui())
