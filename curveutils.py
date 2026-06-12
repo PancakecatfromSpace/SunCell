@@ -151,3 +151,42 @@ def select_voltage_for_current(voltages, currents, measured_current):
     else:
         # crash when current is constant or non monotonous
         raise Exception("Error! Given current curve is non monotonous or constant!")
+
+def reduce_steps(array, stepsize, direction='left', inplace=False):
+    """
+    Reduce step changes in a 1D numeric array by copying neighbor values when
+    the absolute difference between adjacent elements is below `stepsize`.
+
+    Args:
+    array (array-like): 1D sequence of numeric values.
+    stepsize (float): threshold; if abs(a[i] - a[i-1]) < stepsize, replace one of them.
+    direction (str): 'left' to copy left neighbor into right element, 'right' to copy right neighbor into left element.
+    inplace (bool): if True modify the provided array (converted to numpy); otherwise work on a copy.
+
+    Returns:
+      numpy.ndarray: array with reduced steps.
+    """
+
+        
+
+    arr = np.asarray(array)
+    if arr.ndim != 1:
+        raise ValueError("array must be 1D")
+
+    if not inplace:
+        arr = arr.copy()
+        
+    match direction:
+        case 'left':
+            for i in range(1, arr.size):
+                if abs(arr[i] - arr[i-1]) < stepsize:
+                    arr[i] = arr[i-1]
+        case 'right':
+            for i in range(arr.size - 2, -1, -1):
+                if abs(arr[i] - arr[i+1]) < stepsize:
+                    arr[i] = arr[i+1]
+        case _:
+            raise ValueError("direction must be 'left' or 'right'")
+        
+    if not inplace:
+        return arr
