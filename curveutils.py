@@ -190,3 +190,83 @@ def reduce_steps(array, stepsize, direction='left', inplace=False):
         
     if not inplace:
         return arr
+
+def stepsize_reducer(voltages, currents, stepsize, direction='left'):
+    """
+    Discards all voltage current value pairs where the difference between two neighbouring current values is bellow stepsize.
+
+    Args:
+    voltages(1D-array-like): one dimensional array like structure.
+    currents(1D-array-like): one dimensional array like structure, must have same length as voltages.
+    stepsize(float): minimum step size between current values before they get deleted.
+    direction(string): can be left or right, sets wheather the left value bellow the threshhold should be retained or the right value.
+    
+    Returns:
+    voltages(1D-list): One dimensional list.
+    currents(1D-list): One dimensional list.
+
+    Raises:
+    ValueError: If the input list not one dimensional, the lists have different shapes or if the direction given is invalid.
+    """
+    
+    volt = np.asarray(voltages)
+    curr = np.asarray(currents)
+    #check if voltage and current array are both one dimensional
+    if volt.ndim != 1 and curr.ndim != 1:
+        raise ValueError("Error! Arrays for voltages and currents must be 1D.")
+    #check if voltage and current array have the same amount of elements
+    if volt.size != curr.size:
+        raise ValueError("Error! Arrays for voltages and currents must have the same length.")
+
+    volt = volt.copy()
+    curr = curr.copy()
+    #decide weather to approach the current array from left to right or from right to left, if left the left value is retained if right the right value is retained
+    match direction:
+        case 'left':
+            for i in range(1, curr.size):
+                #copies values that are bellow the stepsize so they can be discarded later
+                if abs(curr[i] - curr[i-1]) < stepsize:
+                    curr[i] = curr[i-1]
+                    volt[i] = volt[i-1]
+        case 'right':
+            for i in range(curr.size - 2, -1, -1):
+                if abs(curr[i] - curr[i+1]) < stepsize:
+                    curr[i] = curr[i+1]
+                    volt[i] = volt[i+1]
+        case _:
+            raise ValueError("Error! Direction must be 'left' or 'right'.")
+    #this somehow removed duplicates from both arrays but I'm not sure how, I just copied it from here: https://www.geeksforgeeks.org/python/python-ways-to-remove-duplicates-from-list/
+    volt = list(dict.fromkeys(volt))
+    curr = list(dict.fromkeys(curr))
+
+    return volt,curr
+
+def min_remover(voltages, currents, minimal_voltage, inplace=False):
+    """
+    Removes value pairs if the voltage is bellow a certain threshhold. This is due to an instability problem when the voltage is too low the wire resistance stops a sufficient current from flowing, causing the setpoint to jump around irradically.
+    Args:
+    voltages: a 1D array of equidistant voltages
+    currents: a 1D array of currents corresponding to voltages
+    min_voltage: integer of the minimal value, every value pair bellow this value will be removed
+
+    Returns:
+    voltages: Voltage to the left of the selected point
+
+    Raises:
+    Exception: detects if currents vector is monotonous and will result in a crash if it is not.
+    """
+    volt = np.asarray(voltages)
+    curr = np.asarray(currents)
+    if not inplace:
+        volt = volt.copy()
+        curr = curr.copy()
+    if np.all(np.diff(volt) > 0):
+        # finds index where the voltage should be placed when decreasing monotonely
+        idx = np.searchsorted(volt, minimal_voltage, side='left')
+        # clamps to valid index, index can never be lower than zero nor the arrays maximum leghth
+        idx = min(max(idx, 0), len(voltages)-1)
+        if not inplace:
+            return volt[idx:],curr[idx:]
+    else:
+        # crash when current is constant or non monotonous
+        raise Exception("Error! Given voltage curve must increase monotonely!")
