@@ -9,7 +9,9 @@ from functools import partial
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 
 #create two vectors and populate them with the values from a one diode model
-U_1, I_1 = curveutils.solarIV(10, 90, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 25)
+U_1, I_1 = curveutils.solarIV(10, 90, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 50)
+U_1, I_1 = min_remover(U_1, I_1, 5)
+U_1, I_1 = stepsize_reducer(list(U_1), list(I_1), 0.25, 'right')
 
 #I_1 = curveutils.reduce_steps(I_1,0.1)
 
