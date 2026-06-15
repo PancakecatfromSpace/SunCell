@@ -236,8 +236,8 @@ def stepsize_reducer(voltages, currents, stepsize, direction='left'):
         case _:
             raise ValueError("Error! Direction must be 'left' or 'right'.")
     #this somehow removed duplicates from both arrays but I'm not sure how, I just copied it from here: https://www.geeksforgeeks.org/python/python-ways-to-remove-duplicates-from-list/
-    volt = list(dict.fromkeys(volt))
-    curr = list(dict.fromkeys(curr))
+    volt = np.array(list(dict.fromkeys(volt)))
+    curr = np.array(list(dict.fromkeys(curr)))
 
     return volt,curr
 
