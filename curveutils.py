@@ -37,6 +37,8 @@ class setter:
         self.max_power_point = VCP()
         self.measured_current = None
         self.voltage_setpoint = None
+        self.currents_monotony = None
+        self.voltages_monotony = None
         
         self._find_power_point()
 
@@ -99,6 +101,7 @@ class setter:
         ValueError: if the dimension of both arrays are not 1 or if the arrays have different amounts of values
         """
         self._dimension_checker()
+        self._monotony_checker()
         # create power array from currents and voltages array
         self.power = self.voltages * self.currents
         # find index of maximum power point
@@ -119,6 +122,28 @@ class setter:
             raise ValueError("Error! No valid value for measured_current set!")
         elif not measured_current == None:
             self.measured_current = measured_current
+    def _monotony_checker(self):
+        """
+        Checks if the given function is monotonous and if so wheather it is increasing monotonously or if it is increasing monotonously.
+        Raises:
+        ValueError: Crashes accordingly if function is neither increasing nor decreasing monotonously.
+        """
+        if np.all(np.diff(self.currents) < 0):
+        # finds index where the voltage should be placed when decreasing monotonely
+            self.currents_monotony = "decreasing"
+        elif np.all(np.diff(self.currents) > 0):
+            self.currents_monotony = "increasing"
+        else:
+        # crash when current is constant or non monotonous
+            raise Exception("Error! Given current curve is non monotonous or constant!")
+        if np.all(np.diff(self.voltages) < 0):
+        # finds index where the voltage should be placed when decreasing monotonely
+            self.voltages_monotony = "decreasing"
+        elif np.all(np.diff(self.voltages) > 0):
+            self.voltages_monotony = "increasing"
+        else:
+        # crash when current is constant or non monotonous
+            raise Exception("Error! Given voltage curve is non monotonous or constant!")
 
 
 def solarIV(cell_p:int, cell_s:int, I_s:float, m:float, U_T:float, c_0:float, E:float, steps:int):
