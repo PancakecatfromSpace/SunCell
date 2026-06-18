@@ -28,7 +28,7 @@ class setter:
     currents (1D-np-array): Array for the voltages.
     voltages (1D-np-array): Array for the voltages.
     """
-    def __init__(self, currents = None, voltages = None):
+    def __init__(self, voltages = None, currents = None):
         # initialize the position for u_for_i incremental method
         self.position = 0
         self.currents = currents

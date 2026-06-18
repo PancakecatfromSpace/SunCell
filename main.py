@@ -9,11 +9,12 @@ from functools import partial
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 
 #create two vectors and populate them with the values from a one diode model
-U_1, I_1 = curveutils.solarIV(10, 90, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 50)
+U_1, I_1 = curveutils.solarIV(4, 50, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 10000)
+#prepare data before running the controll algorithm, removes too low 
 U_1, I_1 = curveutils.min_remover(U_1, I_1, 5)
-U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.25, 'right')
+U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
 
-#I_1 = curveutils.reduce_steps(I_1,0.1)
+set_supply = curveutils.setter(U_1, I_1)
 
 fig, ax = plt.subplots()
 #points on the plot
@@ -52,10 +53,11 @@ supply.setValues(5, I_1.max()*1.1, 3000.0)
 def update_supply():
     #read the slider and update the value
     #current_slider = curr_slider.val
-
     supply.measureValues()
+    supply.measuredpoints.current = supply.measuredpoints.current / 1.414
+    volt = set_supply.u_for_i_incremental(supply.measuredpoints.current)
     #selects the voltage for the previously measured current
-    supply.setValues(curveutils.select_voltage_for_current(U_1, I_1, supply.measuredpoints.current))
+    supply.setValues(volt)
 
 def update_gui():
     supply.measureValues()
