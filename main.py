@@ -44,11 +44,18 @@ curr_slider = Slider(
     valinit=I_1.max()/2,
 )
 """
+v = float(set_supply.max_power_point.voltage)
+i = float(set_supply.max_power_point.current)
+ax.annotate("MPP", xy=(v, i), xytext=(v + 0.05*(ax.get_xlim()[1]-ax.get_xlim()[0]),
+                                      i + 0.05*(ax.get_ylim()[1]-ax.get_ylim()[0])),
+            fontsize=10, color='red')
+ax.plot(v, i, 'o', color='red', markersize=8, zorder=5)   # plot on same Axes
 plt.ion()
 plt.show()
 
 #eddited the value of the initial voltage to 5, by suggestion by Rüdiger Mann 27.04.26
 supply.setValues(5, I_1.max()*1.1, 3000.0)
+
 
 def update_supply():
     #read the slider and update the value
@@ -71,7 +78,7 @@ def update_gui():
     #fig.canvas.flush_events()
 #time.sleep(5)
 
-timer = fig.canvas.new_timer(interval=50) #interval is time in miliseconds
+timer = fig.canvas.new_timer(interval=100) #interval is time in miliseconds
 timer2 = fig.canvas.new_timer(interval=1)
 timer.add_callback(lambda: update_supply())
 timer2.add_callback(lambda: update_gui())
