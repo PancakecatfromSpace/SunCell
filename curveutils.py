@@ -9,6 +9,117 @@ plotting utilities.
 """
 
 import numpy as np
+from dataclasses import dataclass
+
+@dataclass
+class VCP:
+    """
+    Stores Values for voltage current and power.
+    """
+    voltage:float = None
+    current:float = None
+    power:float = None
+
+class setter:
+    """
+    This class finds out when and where to set the next point on the given current voltage curve.
+
+    Args:
+    currents (1D-np-array): Array for the voltages.
+    voltages (1D-np-array): Array for the voltages.
+    """
+    def __init__(self, currents = None, voltages = None):
+        # initialize the position for u_for_i incremental method
+        self.position = 0
+        self.currents = currents
+        self.voltages = voltages
+        self.power = None
+        self.max_power_point = VCP()
+        self.measured_current = None
+        self.voltage_setpoint = None
+        
+        self._find_power_point()
+
+    def u_for_i_incremental(self, measured_current = None):
+        """
+        Incremeantally moves the set voltage one step closer to the appropiate voltage for the measured_current one step closer to the appropiate value each time this method is called.
+        Args:
+        measured_current(float): measured current
+        Returns:
+        voltage_setpoint(float): voltage incremeantally moving towards the approprate value for measured_current each time method is called
+        Raises:
+        ValueError: if no value for measured_current can be found
+        """
+        # checks if the measured current given to the function is None, if the value given by self.measured_current is also none crash, if it is not none set self.measured_current to measured_current 
+        self._measured_current_setter(measured_current)
+                
+        voltage_setpoint, self.position = select_voltage_for_current_incremental(self.voltages, self.currents, self.measured_current, self.position)
+        return voltage_setpoint
+    def u_for_i(self, measured_current = None):
+        """
+        Instantly moves the set voltage to the appropiate voltage for the measured_current.
+        Args:
+        measured_current(float): measured current
+        Returns:
+        voltage_setpoint(float): voltage incremeantally moving towards the approprate value for measured_current each time method is called
+        Raises:
+        ValueError: if no value for measured_current can be found
+        """
+        # check if a value for measured_current can be set, if not try previously set value, if there's none crash
+        self._measured_current_setter(measured_current)
+        return select_voltage_for_current(self.voltages, self.currents, self.measured_current)
+    def set_voltages_currents(self, voltages, currents):
+        """
+        Sets the voltages and currents array internally, checks if they have right dimension and the same length and determines the power and power point.
+        Args:
+        voltages(1D np array): Array for the voltages.
+        currents(1D np array): Array for the currents.
+        """
+        self.voltages = voltages
+        self.currents = currents
+        self._find_power_point()
+    def _dimension_checker(self):
+        """
+        Checks if the dimensions of the self.voltages and self.currents are 1 and raises a ValueError if not.
+        Raises:
+        ValueError: if Voltage or Current Array are not of Appropriate dimension
+        """
+        import numpy as np
+        if not (isinstance(self.voltages, np.ndarray) and isinstance(self.currents, np.ndarray)):
+            raise ValueError("Error! Voltages and Currents must be numpy.ndarray.")
+        if not self.voltages.ndim == 1 or not self.currents.ndim == 1:
+            raise ValueError("Error! Voltage or Current Array either not set or of Inapropriate Dimension.")
+        if not len(self.voltages) == len(self.currents):
+            raise ValueError("Error! Voltage and Current Array don't have the same amount of elements.")
+    def _find_power_point(self):
+        """
+        Determines the Maximum power point and checks the dimension of the given arrays.
+
+        Raises:
+        ValueError: if the dimension of both arrays are not 1 or if the arrays have different amounts of values
+        """
+        self._dimension_checker()
+        # create power array from currents and voltages array
+        self.power = self.voltages * self.currents
+        # find index of maximum power point
+        max_power_point_index = np.argmax(self.power)
+        # set maximum power point to determined value
+        self.max_power_point.current = self.currents[max_power_point_index]
+        self.max_power_point.voltage = self.voltages[max_power_point_index]
+        self.max_power_point.power = self.power[max_power_point_index]
+    def _measured_current_setter(self, measured_current = None):
+        """
+        Checks and sets the measured current. If no value is given the previously set value is retained. If no value is set or previously given raise an exception.
+        Args:
+        measured_current(float): measured current to set the internal value to.
+        Raises:
+        ValueError: If no value is given and no valid value is stored.
+        """
+        if measured_current == None and self.measured_current == None:
+            raise ValueError("Error! No valid value for measured_current set!")
+        elif not measured_current == None:
+            self.measured_current = measured_current
+
 
 def solarIV(cell_p:int, cell_s:int, I_s:float, m:float, U_T:float, c_0:float, E:float, steps:int):
     """
@@ -151,6 +262,35 @@ def select_voltage_for_current(voltages, currents, measured_current):
     else:
         # crash when current is constant or non monotonous
         raise Exception("Error! Given current curve is non monotonous or constant!")
+
+def select_voltage_for_current_incremental(U_1, I_1, IM, position):
+    """
+    Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
+    Original implementation with incremental way to determine the correct voltage.
+    Args:
+    voltages: a 1D array of equidistant voltages
+    currents: a 1D array of currents corresponding to voltages
+
+    Returns:
+    voltages: Voltage to the left of the selected point
+    positoin: position from where the inside the array the function must continue
+    """
+    # logic that checks if the current is higher than the upper left border
+    if IM > I_1[0]:
+        position = 0 # mark the left most position to be the current position
+        volt = U_1[1]/4
+        # logic that checks if the current is lower than the lower right border 
+    elif IM < I_1[-1]:
+        position = U_1.size - 1 # mark the right most position to be the right most border
+        volt = U_1[-1]
+        # check if its within range and neither all the way to the right nor all the way to the left
+    if IM < I_1[position] and not position == U_1.size - 1:
+        position = position + 1
+        volt = U_1[position]
+    if IM > I_1[position] and not position == 0:
+        position = position - 1
+        volt = U_1[position]
+    return volt, position
 
 def reduce_steps(array, stepsize, direction='left', inplace=False):
     """
