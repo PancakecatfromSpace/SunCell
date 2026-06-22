@@ -76,7 +76,7 @@ class setter:
         # check if a value for measured_current can be set, if not try previously set value, if there's none crash
         self._measured_current_setter(measured_current)
         
-        self._set_point.voltage = select_voltage_for_current_no_monotony_check(self._voltages, self._currents, self._set_point.current, self._currents_monotony)
+        self._set_point.voltage, self._position = select_voltage_for_current_no_monotony_check(self._voltages, self._currents, self._set_point.current, self._currents_monotony)
         # set power of setpoint
         self._set_point.power = self._set_point.current * self._set_point.voltage
         return self._set_point.voltage
@@ -333,7 +333,7 @@ def select_voltage_for_current_no_monotony_check(voltages, currents, measured_cu
             idx = min(max(idx, 0), len(currents)-1)
             return voltages[idx], idx
         case _:
-            raise ValueError(f"Error! Currents Monotony set to invalid value:{currents_monotony}")
+            raise ValueError(f"Error! Currents Monotony set to invalid value:{self._currents_monotony}")
         
 def select_voltage_for_current_incremental(U_1, I_1, IM, position):
     """
@@ -362,6 +362,41 @@ def select_voltage_for_current_incremental(U_1, I_1, IM, position):
     if IM > I_1[position] and not position == 0:
         position = position - 1
         volt = U_1[position]
+    return volt, position
+def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, position, currents_monotony):
+    """
+    Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
+    Original implementation with incremental way to determine the correct voltage.
+    Args:
+    voltages: a 1D array of equidistant voltages
+    currents: a 1D array of currents corresponding to voltages
+
+    Returns:
+    voltages: Voltage to the left of the selected point
+    position: position from where the inside the array the function must continue
+    """
+    match currents_monotony:
+        case "increasing":
+            raise Exception("Error! I didn't bother to implement this one.")
+        case "decreasing":
+            if IM > I_1[0]:
+                position = 0 # mark the left most position to be the current position
+                volt = U_1[1]/4
+            # logic that checks if the current is lower than the lower right border 
+            elif IM < I_1[-1]:
+                position = U_1.size - 1 # mark the right most position to be the right most border
+                volt = U_1[-1]
+            # check if its within range and neither all the way to the right nor all the way to the left
+            if IM < I_1[position] and not position == U_1.size - 1:
+                position = position + 1
+                volt = U_1[position]
+            if IM > I_1[position] and not position == 0:
+                position = position - 1
+                volt = U_1[position]
+        case _:
+            raise ValueError(f"Error! Currents Monotony set to invalid value:{self._currents_monotony}")
+    # logic that checks if the current is higher than the upper left border
+    
     return volt, position
 
 def reduce_steps(array, stepsize, direction='left', inplace=False):
