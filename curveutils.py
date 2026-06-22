@@ -76,7 +76,7 @@ class setter:
         # check if a value for measured_current can be set, if not try previously set value, if there's none crash
         self._measured_current_setter(measured_current)
         
-        self._set_point.voltage = select_voltage_for_current(self._voltages, self._currents, self._set_point.current)
+        self._set_point.voltage = select_voltage_for_current_no_monotony_check(self._voltages, self._currents, self._set_point.current, self._currents_monotony)
         # set power of setpoint
         self._set_point.power = self._set_point.current * self._set_point.voltage
         return self._set_point.voltage
@@ -90,6 +90,7 @@ class setter:
         """
         self._voltages = voltages
         self._currents = currents
+        # set power point and run checks for dimension and monotony
         self._find_power_point()
     def _dimension_checker(self):
         """
@@ -190,7 +191,6 @@ def solarIV(cell_p:int, cell_s:int, I_s:float, m:float, U_T:float, c_0:float, E:
     I = I*cell_p
 
     return U, I
-
 def resistorIV(R:float, U_min:float, U_max:float, steps:int):
     """
     calculates the current voltage curve of a single resistor, allows negative values to check behaiviour of select_voltage_for_current
@@ -215,7 +215,6 @@ def resistorIV(R:float, U_min:float, U_max:float, steps:int):
 
 
     return U, I
-
 def unmonotonousIV(U_min:float, U_max:float, steps:int):
     """
     Creates a curve that is I = U², only to check behaiviour of select_voltage_for_current (checks if non monotonous curves are caught)
@@ -298,7 +297,44 @@ def select_voltage_for_current(voltages, currents, measured_current):
     else:
         # crash when current is constant or non monotonous
         raise Exception("Error! Given current curve is non monotonous or constant!")
+def select_voltage_for_current_no_monotony_check(voltages, currents, measured_current, currents_monotony):
+    """
+    Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
 
+    The currents vector may be discontinuous but it must be monotonous, non monotonous current arrays result in a crash, see Raises.
+    Args:
+    voltages: a 1D array of equidistant voltages
+    currents: a 1D array of currents corresponding to voltages
+
+    Returns:
+    voltages: Voltage to the left of the selected point
+    idx: The index within the array, position for the incremental implementation
+
+    Raises:
+    Exception: detects if currents vector is monotonous and will result in a crash if it is not.
+
+    """
+    """
+    np.all(np.diff(currents) < 0) and np.all(np.diff(currents) > 0) are a clever way to check for monotony, np.diff creates the difference of all neighbouring
+    values and fills the answer to the question if it is greater than zero into an array, np.all checks if any of the values in said array is false and if it is
+    returns false
+    https://stackoverflow.com/questions/30734258/efficiently-check-if-numpy-ndarray-values-are-strictly-increasing
+    """
+    match currents_monotony:
+        case "decreasing":
+            # finds index where the voltage should be placed when decreasing monotonely
+            idx = np.searchsorted(-currents, -measured_current, side='right')
+            # clamps to valid index, index can never be lower than zero nor the arrays maximum leghth
+            idx = min(max(idx, 0), len(currents)-1)
+            return voltages[idx], idx
+        case "increasing":
+            # same as  above but for monotonely increasing functions
+            idx = np.searchsorted(currents, measured_current, side='right')
+            idx = min(max(idx, 0), len(currents)-1)
+            return voltages[idx], idx
+        case _:
+            raise ValueError(f"Error! Currents Monotony set to invalid value:{currents_monotony}")
+        
 def select_voltage_for_current_incremental(U_1, I_1, IM, position):
     """
     Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
