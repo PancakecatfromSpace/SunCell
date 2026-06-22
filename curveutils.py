@@ -22,7 +22,8 @@ class VCP:
 
 class setter:
     """
-    This class finds out when and where to set the next point on the given current voltage curve.
+    This class finds out when and where to set the next point on the given current voltage curve. 
+    It retains the values for voltages and currents, determines the postion of the maximum power point and power at maximum power point.
 
     Args:
     currents (1D-np-array): Array for the voltages.
@@ -58,7 +59,7 @@ class setter:
         # checks if the measured current given to the function is None, if the value given by self.measured_current is also none crash, if it is not none set self.measured_current to measured_current 
         self._measured_current_setter(measured_current)
                 
-        self._set_point.voltage, self._position = select_voltage_for_current_incremental(self._voltages, self._currents, self._set_point.current, self._position)
+        self._set_point.voltage, self._position = select_voltage_for_current_incremental_external_monotony(self._voltages, self._currents, self._set_point.current, self._position, self._currents_monotony)
         
         # set power of setpoint
         self._set_point.power = self._set_point.current * self._set_point.voltage
@@ -403,7 +404,7 @@ def reduce_steps(array, stepsize, direction='left', inplace=False):
     """
     Reduce step changes in a 1D numeric array by copying neighbor values when
     the absolute difference between adjacent elements is below `stepsize`.
-
+    Unused since it was developed further into stepsize_reducer
     Args:
     array (array-like): 1D sequence of numeric values.
     stepsize (float): threshold; if abs(a[i] - a[i-1]) < stepsize, replace one of them.
@@ -437,7 +438,6 @@ def reduce_steps(array, stepsize, direction='left', inplace=False):
         
     if not inplace:
         return arr
-
 def stepsize_reducer(voltages, currents, stepsize, direction='left'):
     """
     Discards all voltage current value pairs where the difference between two neighbouring current values is bellow stepsize.
@@ -487,7 +487,6 @@ def stepsize_reducer(voltages, currents, stepsize, direction='left'):
     curr = np.array(list(dict.fromkeys(curr)))
 
     return volt,curr
-
 def min_remover(voltages, currents, minimal_voltage, inplace=False):
     """
     Removes value pairs if the voltage is bellow a certain threshhold. This is due to an instability problem when the voltage is too low the wire resistance stops a sufficient current from flowing, causing the setpoint to jump around irradically.
