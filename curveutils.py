@@ -57,7 +57,7 @@ class setter:
         ValueError: if no value for measured_current can be found
         """
         # checks if the measured current given to the function is None, if the value given by self.measured_current is also none crash, if it is not none set self.measured_current to measured_current 
-        self._measured_current_setter(measured_current)
+        self.measured_current_setter(measured_current)
                 
         self._set_point.voltage, self._position = select_voltage_for_current_incremental_external_monotony(self._voltages, self._currents, self._set_point.current, self._position, self._currents_monotony)
         
@@ -75,7 +75,7 @@ class setter:
         ValueError: if no value for measured_current can be found
         """
         # check if a value for measured_current can be set, if not try previously set value, if there's none crash
-        self._measured_current_setter(measured_current)
+        self.measured_current_setter(measured_current)
         
         self._set_point.voltage, self._position = select_voltage_for_current_no_monotony_check(self._voltages, self._currents, self._set_point.current, self._currents_monotony)
         # set power of setpoint
@@ -123,7 +123,7 @@ class setter:
         self._max_power_point.current = self._currents[max_power_point_index]
         self._max_power_point.voltage = self._voltages[max_power_point_index]
         self._max_power_point.power = self._power[max_power_point_index]
-    def _measured_current_setter(self, measured_current = None):
+    def measured_current_setter(self, measured_current = None):
         """
         Checks and sets the measured current. If no value is given the previously set value is retained. If no value is set or previously given raise an exception.
         Args:
@@ -262,42 +262,6 @@ def unmonotonousIV2(U_min:float, U_max:float, I_val:float, steps:int):
     return U, I
 
 
-def select_voltage_for_current(voltages, currents, measured_current):
-    """
-    Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
-
-    The currents vector may be discontinuous but it must be monotonous, non monotonous current arrays result in a crash, see Raises.
-    Args:
-    voltages: a 1D array of equidistant voltages
-    currents: a 1D array of currents corresponding to voltages
-
-    Returns:
-    voltages: Voltage to the left of the selected point
-
-    Raises:
-    Exception: detects if currents vector is monotonous and will result in a crash if it is not.
-
-    """
-    """
-    np.all(np.diff(currents) < 0) and np.all(np.diff(currents) > 0) are a clever way to check for monotony, np.diff creates the difference of all neighbouring
-    values and fills the answer to the question if it is greater than zero into an array, np.all checks if any of the values in said array is false and if it is
-    returns false
-    https://stackoverflow.com/questions/30734258/efficiently-check-if-numpy-ndarray-values-are-strictly-increasing
-    """
-    if np.all(np.diff(currents) < 0):
-        # finds index where the voltage should be placed when decreasing monotonely
-        idx = np.searchsorted(-currents, -measured_current, side='right')
-        # clamps to valid index, index can never be lower than zero nor the arrays maximum leghth
-        idx = min(max(idx, 0), len(currents)-1)
-        return voltages[idx]
-    elif np.all(np.diff(currents) > 0):
-        # same as  above but for monotonely increasing functions
-        idx = np.searchsorted(currents, measured_current, side='right')
-        idx = min(max(idx, 0), len(currents)-1)
-        return voltages[idx]
-    else:
-        # crash when current is constant or non monotonous
-        raise Exception("Error! Given current curve is non monotonous or constant!")
 def select_voltage_for_current_no_monotony_check(voltages, currents, measured_current, currents_monotony):
     """
     Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
@@ -336,34 +300,6 @@ def select_voltage_for_current_no_monotony_check(voltages, currents, measured_cu
         case _:
             raise ValueError(f"Error! Currents Monotony set to invalid value:{self._currents_monotony}")
         
-def select_voltage_for_current_incremental(U_1, I_1, IM, position):
-    """
-    Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
-    Original implementation with incremental way to determine the correct voltage.
-    Args:
-    voltages: a 1D array of equidistant voltages
-    currents: a 1D array of currents corresponding to voltages
-
-    Returns:
-    voltages: Voltage to the left of the selected point
-    positoin: position from where the inside the array the function must continue
-    """
-    # logic that checks if the current is higher than the upper left border
-    if IM > I_1[0]:
-        position = 0 # mark the left most position to be the current position
-        volt = U_1[1]/4
-        # logic that checks if the current is lower than the lower right border 
-    elif IM < I_1[-1]:
-        position = U_1.size - 1 # mark the right most position to be the right most border
-        volt = U_1[-1]
-        # check if its within range and neither all the way to the right nor all the way to the left
-    if IM < I_1[position] and not position == U_1.size - 1:
-        position = position + 1
-        volt = U_1[position]
-    if IM > I_1[position] and not position == 0:
-        position = position - 1
-        volt = U_1[position]
-    return volt, position
 def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, position, currents_monotony):
     """
     Selects voltage value for given current value. Expects two vectors, one vector with equidistant voltage steps and one with corresponding currents.
@@ -400,44 +336,6 @@ def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, posit
     
     return volt, position
 
-def reduce_steps(array, stepsize, direction='left', inplace=False):
-    """
-    Reduce step changes in a 1D numeric array by copying neighbor values when
-    the absolute difference between adjacent elements is below `stepsize`.
-    Unused since it was developed further into stepsize_reducer
-    Args:
-    array (array-like): 1D sequence of numeric values.
-    stepsize (float): threshold; if abs(a[i] - a[i-1]) < stepsize, replace one of them.
-    direction (str): 'left' to copy left neighbor into right element, 'right' to copy right neighbor into left element.
-    inplace (bool): if True modify the provided array (converted to numpy); otherwise work on a copy.
-
-    Returns:
-      numpy.ndarray: array with reduced steps.
-    """
-
-        
-
-    arr = np.asarray(array)
-    if arr.ndim != 1:
-        raise ValueError("array must be 1D")
-
-    if not inplace:
-        arr = arr.copy()
-        
-    match direction:
-        case 'left':
-            for i in range(1, arr.size):
-                if abs(arr[i] - arr[i-1]) < stepsize:
-                    arr[i] = arr[i-1]
-        case 'right':
-            for i in range(arr.size - 2, -1, -1):
-                if abs(arr[i] - arr[i+1]) < stepsize:
-                    arr[i] = arr[i+1]
-        case _:
-            raise ValueError("direction must be 'left' or 'right'")
-        
-    if not inplace:
-        return arr
 def stepsize_reducer(voltages, currents, stepsize, direction='left'):
     """
     Discards all voltage current value pairs where the difference between two neighbouring current values is bellow stepsize.
