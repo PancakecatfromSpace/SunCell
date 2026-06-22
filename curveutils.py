@@ -30,15 +30,18 @@ class setter:
     """
     def __init__(self, voltages = None, currents = None):
         # initialize the position for u_for_i incremental method
-        self.position = 0
-        self.currents = currents
-        self.voltages = voltages
-        self.power = None
-        self.max_power_point = VCP()
-        self.measured_current = None
-        self.voltage_setpoint = None
-        self.currents_monotony = None
-        self.voltages_monotony = None
+        self._position = 0
+        # 1D Array for the Voltages and Currents
+        self._currents = currents
+        self._voltages = voltages
+        # 1D Array for power determined by multiplying currents and voltages
+        self._power = None
+        # Voltage Current and Power of the maximum power point and setpoint
+        self._max_power_point = VCP()
+        self._set_point = VCP()
+        # Determined monotony for voltages and currents array
+        self._currents_monotony = None
+        self._voltages_monotony = None
         
         self._find_power_point()
 
@@ -55,8 +58,11 @@ class setter:
         # checks if the measured current given to the function is None, if the value given by self.measured_current is also none crash, if it is not none set self.measured_current to measured_current 
         self._measured_current_setter(measured_current)
                 
-        voltage_setpoint, self.position = select_voltage_for_current_incremental(self.voltages, self.currents, self.measured_current, self.position)
-        return voltage_setpoint
+        self._set_point.voltage, self._position = select_voltage_for_current_incremental(self._voltages, self._currents, self._set_point.current, self._position)
+        
+        # set power of setpoint
+        self._set_point.power = self._set_point.current * self._set_point.voltage
+        return self._set_point.voltage
     def u_for_i(self, measured_current = None):
         """
         Instantly moves the set voltage to the appropiate voltage for the measured_current.
@@ -69,33 +75,38 @@ class setter:
         """
         # check if a value for measured_current can be set, if not try previously set value, if there's none crash
         self._measured_current_setter(measured_current)
-        return select_voltage_for_current(self.voltages, self.currents, self.measured_current)
+        
+        self._set_point.voltage = select_voltage_for_current(self._voltages, self._currents, self._set_point.current)
+        # set power of setpoint
+        self._set_point.power = self._set_point.current * self._set_point.voltage
+        return self._set_point.voltage
     def set_voltages_currents(self, voltages, currents):
         """
         Sets the voltages and currents array internally, checks if they have right dimension and the same length and determines the power and power point.
+        Monotony is checked aswell and stored as attributes.
         Args:
         voltages(1D np array): Array for the voltages.
         currents(1D np array): Array for the currents.
         """
-        self.voltages = voltages
-        self.currents = currents
+        self._voltages = voltages
+        self._currents = currents
         self._find_power_point()
     def _dimension_checker(self):
         """
-        Checks if the dimensions of the self.voltages and self.currents are 1 and raises a ValueError if not.
+        Checks if the dimensions of the self._voltages and self._currents are 1 and raises a ValueError if not.
         Raises:
         ValueError: if Voltage or Current Array are not of Appropriate dimension
         """
         import numpy as np
-        if not (isinstance(self.voltages, np.ndarray) and isinstance(self.currents, np.ndarray)):
+        if not (isinstance(self._voltages, np.ndarray) and isinstance(self._currents, np.ndarray)):
             raise ValueError("Error! Voltages and Currents must be numpy.ndarray.")
-        if not self.voltages.ndim == 1 or not self.currents.ndim == 1:
+        if not self._voltages.ndim == 1 or not self._currents.ndim == 1:
             raise ValueError("Error! Voltage or Current Array either not set or of Inapropriate Dimension.")
-        if not len(self.voltages) == len(self.currents):
+        if not len(self._voltages) == len(self._currents):
             raise ValueError("Error! Voltage and Current Array don't have the same amount of elements.")
     def _find_power_point(self):
         """
-        Determines the Maximum power point and checks the dimension of the given arrays.
+        Determines the Maximum power point and checks the dimension and monotony of the given arrays. Also sets the power for the _set_point.power variable
 
         Raises:
         ValueError: if the dimension of both arrays are not 1 or if the arrays have different amounts of values
@@ -103,13 +114,13 @@ class setter:
         self._dimension_checker()
         self._monotony_checker()
         # create power array from currents and voltages array
-        self.power = self.voltages * self.currents
+        self._power = self._voltages * self._currents
         # find index of maximum power point
-        max_power_point_index = np.argmax(self.power)
+        max_power_point_index = np.argmax(self._power)
         # set maximum power point to determined value
-        self.max_power_point.current = self.currents[max_power_point_index]
-        self.max_power_point.voltage = self.voltages[max_power_point_index]
-        self.max_power_point.power = self.power[max_power_point_index]
+        self._max_power_point.current = self._currents[max_power_point_index]
+        self._max_power_point.voltage = self._voltages[max_power_point_index]
+        self._max_power_point.power = self._power[max_power_point_index]
     def _measured_current_setter(self, measured_current = None):
         """
         Checks and sets the measured current. If no value is given the previously set value is retained. If no value is set or previously given raise an exception.
@@ -118,29 +129,29 @@ class setter:
         Raises:
         ValueError: If no value is given and no valid value is stored.
         """
-        if measured_current == None and self.measured_current == None:
+        if measured_current == None and self._set_point.current == None:
             raise ValueError("Error! No valid value for measured_current set!")
         elif not measured_current == None:
-            self.measured_current = measured_current
+            self._set_point.current = measured_current
     def _monotony_checker(self):
         """
-        Checks if the given function is monotonous and if so wheather it is increasing monotonously or if it is increasing monotonously.
+        Checks if the given function is monotonous and if so wheather it is increasing monotonously or if it is decreasing monotonously.
         Raises:
         ValueError: Crashes accordingly if function is neither increasing nor decreasing monotonously.
         """
-        if np.all(np.diff(self.currents) < 0):
+        if np.all(np.diff(self._currents) < 0):
         # finds index where the voltage should be placed when decreasing monotonely
-            self.currents_monotony = "decreasing"
-        elif np.all(np.diff(self.currents) > 0):
-            self.currents_monotony = "increasing"
+            self._currents_monotony = "decreasing"
+        elif np.all(np.diff(self._currents) > 0):
+            self._currents_monotony = "increasing"
         else:
         # crash when current is constant or non monotonous
             raise Exception("Error! Given current curve is non monotonous or constant!")
-        if np.all(np.diff(self.voltages) < 0):
+        if np.all(np.diff(self._voltages) < 0):
         # finds index where the voltage should be placed when decreasing monotonely
-            self.voltages_monotony = "decreasing"
-        elif np.all(np.diff(self.voltages) > 0):
-            self.voltages_monotony = "increasing"
+            self._voltages_monotony = "decreasing"
+        elif np.all(np.diff(self._voltages) > 0):
+            self._voltages_monotony = "increasing"
         else:
         # crash when current is constant or non monotonous
             raise Exception("Error! Given voltage curve is non monotonous or constant!")
