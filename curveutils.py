@@ -99,7 +99,6 @@ class setter:
         Raises:
         ValueError: if Voltage or Current Array are not of Appropriate dimension
         """
-        import numpy as np
         if not (isinstance(self._voltages, np.ndarray) and isinstance(self._currents, np.ndarray)):
             raise ValueError("Error! Voltages and Currents must be numpy.ndarray.")
         if not self._voltages.ndim == 1 or not self._currents.ndim == 1:
