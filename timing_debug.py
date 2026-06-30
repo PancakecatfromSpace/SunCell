@@ -15,16 +15,16 @@ U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
 
 set_supply = curveutils.setter(U_1, I_1)
 
-def measure(supply, name, t):
+def measure(supply):
     supply.measureValues()
     # supply.write/setpoints...
     #print(supply.measuredpoints)
     return
-def set(supply, setter, name, t):
+def set(supply, setter):
     supply.setValues(setter.u_for_i_incremental(supply.measuredpoints.current))
     return
     
-def print_measured_points(supply, name,t):
+def print_measured_points(supply):
     print(supply.measuredpoints)
     return
 
