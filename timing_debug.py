@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 import time
 from dataclasses import dataclass, field
 from PySide6.QtCore import QObject, QTimer, Signal, QRunnable, QThreadPool
+import signal
 
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 #create two vectors and populate them with the values from a one diode model
@@ -62,4 +63,12 @@ supply.setValues(5, I_1.max()*1.1, 3000.0)
 
 sched.start_all()
 
-sys.exit(app.exec())
+# await a keyboard interrupt and exit cleanly if one is cought
+def on_sigint(*_):
+    sched.stop()
+    app.quit()
+
+signal.signal(signal.SIGINT, on_sigint)
+
+sched.start_all()
+app.exec()

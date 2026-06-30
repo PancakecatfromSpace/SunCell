@@ -52,6 +52,7 @@ class Scheduler(QObject):
         self._pool = QThreadPool.globalInstance()
         self._pool.setMaxThreadCount(1)  # serialize PSU calls
 
+        self._stoped = False
     def add_periodic(self, name, period_s, func, *, args=(), kwargs=None, semaphores: list[semaphore] = None,start_immediately=False):
         if kwargs is None:
             kwargs = {}
@@ -61,14 +62,27 @@ class Scheduler(QObject):
                                args=args, kwargs=kwargs, semaphores=semaphores, next_deadline=next_deadline))
 
     def start_all(self):
+        # start the tick rate which will trigger _on_tick
         if self._started:
             return
         self._started = True
         self._tick.start()
-
+    def stop(self):
+        # stops the tick rate 
+        if self._stoped:
+            return
+        self._stoped = True
+        self._tick.stop()
+    def __del__(self):
+        try:
+            self.stop()
+        except:
+            pass
     def _on_tick(self):
         now = time.monotonic()
         for job in self._jobs:
+            if self._stoped:
+                return
             if now >= job.next_deadline:
                 elapsed = int((now - job.next_deadline) / job.period_s) + 1
                 job.next_deadline += elapsed * job.period_s
