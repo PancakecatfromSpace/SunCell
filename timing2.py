@@ -10,6 +10,7 @@ class semaphore:
 
 @dataclass
 class Job:
+    # Structure the job with a list of semaphores and the function to be called upon
     name: str
     period_s: float
     func: callable
@@ -19,26 +20,24 @@ class Job:
     next_deadline: float = 0.0
 
 class JobSignals(QObject):
+    # store the return signal in finished and failed, the failed part will only be read if executing the jobs func raises an excpetion
     finished = Signal(str, object)
     failed = Signal(str, str)
 
 class PSURunnable(QRunnable):
-    def __init__(self, job_name, now, func, args, kwargs):
+    def __init__(self, job: Job, now: float):
         super().__init__()
-        self.job_name = job_name
+        self.job = job
         self.now = now
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
         self.signals = JobSignals()
 
     def run(self):
         # attempt to run the job, if the job fails output message properly
         try:
-            res = self.func(*self.args, self.job_name, self.now, **self.kwargs)
-            self.signals.finished.emit(self.job_name, res)
+            res = self.job.func(*self.job.args, **self.job.kwargs)
+            self.signals.finished.emit(self.job.name, res)
         except Exception as e:
-            self.signals.failed.emit(self.job_name, repr(e))
+            self.signals.failed.emit(self.job.name, repr(e))
 
 class Scheduler(QObject):
     def __init__(self, tick_ms=20, parent=None):
@@ -74,6 +73,6 @@ class Scheduler(QObject):
                 elapsed = int((now - job.next_deadline) / job.period_s) + 1
                 job.next_deadline += elapsed * job.period_s
 
-                runnable = PSURunnable(job.name, now, job.func, job.args, job.kwargs)
+                runnable = PSURunnable(job, now)
                 runnable.signals.failed.connect(lambda name, err: print(f"{name} failed: {err}"))
                 self._pool.start(runnable)
