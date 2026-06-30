@@ -1,3 +1,62 @@
+"""
+Scheduler (Qt + QThreadPool)
+
+Intention
+----------
+This module provides a lightweight periodic task scheduler intended for Qt GUI
+applications. It runs job timing on a QTimer (main/GUI thread) while executing
+each job's function in a worker thread via QThreadPool. This keeps the UI
+responsive even when jobs perform blocking I/O (e.g., communicating with a
+power supply).
+
+Structure
+----------
+1) Scheduler
+   - Owns a QTimer that ticks at `tick_ms`.
+   - Maintains a list of Job objects (period, next_deadline, callable, args/kwargs).
+   - On each tick, checks which jobs are due (`now >= job.next_deadline`).
+   - Before starting a job, it consults semaphores assigned to that job.
+     If required semaphores are currently held, the job is skipped for this tick.
+   - When due and allowed, creates a PSURunnable and submits it to the thread pool.
+
+2) Job
+   - Represents one periodic task.
+   - Stores:
+     - name: identifier for logging/signals
+     - period_s: desired execution period
+     - func: user-supplied callable
+     - args / kwargs: static parameters passed to func
+     - semaphores: list of semaphore objects required for safe execution
+     - next_deadline: when the job should run next
+
+3) PSURunnable (QRunnable)
+   - Wraps a Job so it can be executed by QThreadPool.
+   - In run():
+     - attempts to acquire all required semaphores 
+        (atomic provided by threading prevents other runnables from accessing the semaphore)
+     - if acquisition fails, returns immediately (job was not allowed to run)
+     - otherwise calls the job function as:
+           func(*job.args, **job.kwargs)
+     - always releases any semaphores it acquired (even on exceptions)
+     - emits finished/failed signals for monitoring/logging
+
+4) Semaphores
+   - Each semaphore acts as a mutual-exclusion guard for shared resources
+     (e.g., a single power-supply connection/driver session that must not be
+     accessed concurrently).
+   - The scheduler and runnable use a shared lock (threading.Lock) to ensure the
+     semaphore state updates are race-free.
+   - Concurrency rule: a job starts only if ALL semaphores assigned to it are free.
+
+Notes / Expectations for Users
+-------------------------------
+- Your job functions are executed in worker threads. They must not touch Qt
+widgets directly; instead, communicate back to the GUI thread via signals
+  (e.g., by extending JobSignals) or thread-safe queues.
+- If a job must use a shared resource, assign the same semaphore object(s) to
+  all jobs that touch that resource.
+"""
+
 import time
 import threading
 from dataclasses import dataclass, field

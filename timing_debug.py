@@ -1,6 +1,6 @@
 import sys
 import curveutils
-import timing3 as timing2
+import qt_scheduler as timing2
 import power_supply_drivers.wrapper as coms
 from PySide6.QtWidgets import QApplication
 import time
