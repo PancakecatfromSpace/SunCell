@@ -6,7 +6,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, QRunnable, QThreadPool
 class semaphore:
     semaphore_name:str=None
     semaphore_set:bool=False
-    semaphore_held_since:float=None
+    held_by:str=None
 
 @dataclass
 class Job:
@@ -25,6 +25,9 @@ class JobSignals(QObject):
     failed = Signal(str, str)
 
 class PSURunnable(QRunnable):
+    """
+    Dataclass creating a job from a QRunnable object so they can be scheduled using QThreadPool
+    """
     def __init__(self, job: Job, now: float):
         super().__init__()
         self.job = job
@@ -62,6 +65,9 @@ class Scheduler(QObject):
                                args=args, kwargs=kwargs, semaphores=semaphores, next_deadline=next_deadline))
 
     def start_all(self):
+        """
+        Start all jobs added via add_periodic.
+        """
         # start the tick rate which will trigger _on_tick
         if self._started:
             return
@@ -74,19 +80,30 @@ class Scheduler(QObject):
         self._stoped = True
         self._tick.stop()
     def __del__(self):
+        # when deleted stop the timer, otherwise the qt timer can remain active, which will trigger an exception when it's signal goes nowhere
         try:
             self.stop()
         except:
             pass
     def _on_tick(self):
+        # check every tick which jobs are due and run them
         now = time.monotonic()
+        # go through _jobs:
         for job in self._jobs:
             if self._stoped:
                 return
+            # go through all the semaphores of the current job, if it is set by any other job, don't execute the job
+            for semaphores in job.semaphores:
+
+                return
+            # exit tick if stoped is set, this prevents an issue if the tick is already started and going through the jobs that it will continue with the job list
+            
+            # run each job which is past it's deadline
             if now >= job.next_deadline:
+                # calculate and set the next deadline
                 elapsed = int((now - job.next_deadline) / job.period_s) + 1
                 job.next_deadline += elapsed * job.period_s
-
+                # set the job as a PSURunnable object
                 runnable = PSURunnable(job, now)
                 runnable.signals.failed.connect(lambda name, err: print(f"{name} failed: {err}"))
                 self._pool.start(runnable)
