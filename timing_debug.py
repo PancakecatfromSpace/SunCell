@@ -1,5 +1,6 @@
 import sys
-import timing2, curveutils
+import curveutils
+import timing3 as timing2
 import power_supply_drivers.wrapper as coms
 from PySide6.QtWidgets import QApplication
 import time
@@ -28,6 +29,7 @@ def set(supply, setter):
 def print_measured_points(supply):
     print(supply.measuredpoints)
     return
+psu_com = timing2.semaphore(semaphore_name="psu_com")
 
 set_supply = curveutils.setter(U_1, I_1)
 sched = timing2.Scheduler(tick_ms=1)
@@ -37,7 +39,8 @@ sched.add_periodic(
     func=measure,
     args=(supply,),          # only supply is static
     kwargs={},
-    start_immediately=True
+    start_immediately=True,
+    semaphores=[psu_com]
 )
 sched.add_periodic(
     "set",
@@ -45,7 +48,8 @@ sched.add_periodic(
     func=set,
     args=(supply,set_supply,),          # only supply is static
     kwargs={},
-    start_immediately=True
+    start_immediately=True,
+    semaphores=[psu_com]
 )
 sched.add_periodic(
     "print",
