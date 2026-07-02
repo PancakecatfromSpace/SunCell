@@ -5,6 +5,7 @@ import time
 import power_supply_drivers.wrapper as coms
 import curveutils
 from functools import partial
+import timing_debug
 
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 
@@ -79,7 +80,7 @@ def update_gui():
 #time.sleep(5)
 
 timer = fig.canvas.new_timer(interval=100) #interval is time in miliseconds
-timer2 = fig.canvas.new_timer(interval=1)
+timer2 = fig.canvas.new_timer(interval=50)
 timer.add_callback(lambda: update_supply())
 timer2.add_callback(lambda: update_gui())
 timer.start()
