@@ -4,7 +4,7 @@ from PyQt6.QtGui import QIcon
 app = QApplication([])
 
 window = QMainWindow()
-test = QIcon("solar_energy_icon.ico")
+test = QIcon("solar_energy_icon.png")
 window.setWindowIcon(test)
 window.setMinimumSize(250,500)
 
