@@ -1,12 +1,13 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Slider
-import time
 import power_supply_drivers.wrapper as coms
 import curveutils
-from functools import partial
-import timing_debug
-
+from PySide6.QtCore import QObject, QTimer, Signal, QRunnable, QThreadPool
+import signal
+import qt_scheduler as timing2
+from PySide6.QtWidgets import QApplication
+from PySide6 import QtWidgets
+import sys
+import gui
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA") # connect to power supply with this IP Address
 
 #create two vectors and populate them with the values from a one diode model
@@ -17,75 +18,86 @@ U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
 
 set_supply = curveutils.setter(U_1, I_1)
 
-fig, ax = plt.subplots()
-#points on the plot
-ax.plot(U_1, I_1, color='C0')
-#makes points interactable and updateable
-soll, = ax.plot([], [], marker='o', color='red', markersize=8)
-ist, = ax.plot([], [], marker='o', color='green', markersize=8)
-#set the limits for the plot to be the max and min values in the vector U_1 and I_1
-ax.set_xlim(U_1.min(), U_1.max())
-ax.set_ylim(0, I_1.max()*1.1)
-#label stuff
-ax.set_xlabel("Voltage")
-ax.set_ylabel("Current")
-#make a text to move with the point
-measure_label = ax.text(10, 10,"Measured Value")
-setpoint_label = ax.text(10, 10, "Set Value")
-"""
-# adjust placement of plot to make room for slider
-fig.subplots_adjust(bottom=0.25)
-# Make a horizontal slider to control current
-axcurr = fig.add_axes([0.25, 0.1, 0.65, 0.03])
-curr_slider = Slider(
-    ax=axcurr,
-    label='Current (amp)',
-    valmin=0,
-    valmax=I_1.max()*1.1,
-    valinit=I_1.max()/2,
-)
-"""
-v = float(set_supply.max_power_point.voltage)
-i = float(set_supply.max_power_point.current)
-ax.annotate("MPP", xy=(v, i), xytext=(v + 0.05*(ax.get_xlim()[1]-ax.get_xlim()[0]),
-                                      i + 0.05*(ax.get_ylim()[1]-ax.get_ylim()[0])),
-            fontsize=10, color='red')
-ax.plot(v, i, 'o', color='red', markersize=8, zorder=5)   # plot on same Axes
-plt.ion()
-plt.show()
+class MainDialog(QtWidgets.QDialog):
+    """
+    This class wraps the gui.py file into a new QDialog, this way the singals and connections can be handled without directly editing gui.py.
+    """
+    def __init__(self, parent = None):
+        super().__init__(parent)
+
+        self.ui = gui.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.ui.voltage_display.value
+
 
 #eddited the value of the initial voltage to 5, by suggestion by Rüdiger Mann 27.04.26
 supply.setValues(5, I_1.max()*1.1, 3000.0)
 
+set_supply = curveutils.setter(U_1, I_1)
 
-def update_supply():
-    #read the slider and update the value
-    #current_slider = curr_slider.val
+def measure(supply):
     supply.measureValues()
-    supply.measuredpoints.current = supply.measuredpoints.current / 1.414
-    volt = set_supply.u_for_i_incremental(supply.measuredpoints.current)
-    #selects the voltage for the previously measured current
-    supply.setValues(volt)
+    # supply.write/setpoints...
+    #print(supply.measuredpoints)
+    return
+def set(supply, setter):
+    supply.setValues(setter.u_for_i_incremental(supply.measuredpoints.current))
+    return
+    
+def print_measured_points(supply):
+    print(supply.measuredpoints)
+    return
+psu_com = timing2.semaphore(semaphore_name="psu_com")
 
-def update_gui():
-    supply.measureValues()
-    soll.set_data([supply.setpoints.voltage], [supply.setpoints.current])      # <- scalar -> sequence
-    ist.set_data([supply.measuredpoints.voltage], [supply.measuredpoints.current])
+set_supply = curveutils.setter(U_1, I_1)
+sched = timing2.Scheduler(tick_ms=1)
+sched.add_periodic(
+    "measure",
+    period_s=0.01,
+    func=measure,
+    args=(supply,),          # only supply is static
+    kwargs={},
+    start_immediately=True,
+    semaphores=[psu_com]
+)
+sched.add_periodic(
+    "set",
+    period_s=0.01,
+    func=set,
+    args=(supply,set_supply,),          # only supply is static
+    kwargs={},
+    start_immediately=True,
+    semaphores=[psu_com]
+)
+sched.add_periodic(
+    "print",
+    period_s=1,
+    func=print_measured_points,
+    args=(supply,),          # only supply is static
+    kwargs={},
+    start_immediately=True
+)
+app = QApplication([])
+gui_window = MainDialog()
+gui_window.show()
 
-    measure_label.set_position((supply.measuredpoints.voltage, supply.measuredpoints.current+I_1.max()*0.05))
-    setpoint_label.set_position((supply.setpoints.voltage, supply.setpoints.current+I_1.max()*0.05))
 
-    fig.canvas.draw_idle()
-    #fig.canvas.flush_events()
-#time.sleep(5)
+supply.setValues(5, I_1.max()*1.1, 3000.0)
 
-timer = fig.canvas.new_timer(interval=100) #interval is time in miliseconds
-timer2 = fig.canvas.new_timer(interval=50)
-timer.add_callback(lambda: update_supply())
-timer2.add_callback(lambda: update_gui())
-timer.start()
-timer2.start()
 
-plt.show(block=True)
+sched.start_all()
+
+# await a keyboard interrupt and exit cleanly if one is cought
+def on_sigint(*_):
+    sched.stop()
+    app.quit()
+
+signal.signal(signal.SIGINT, on_sigint)
+
+sched.start_all()
+app.exec()
+
+
 
 #coms.closeSocket(socket)
