@@ -1,14 +1,6 @@
-import numpy as np
-
-import curveutils
-from PySide6.QtCore import QObject, QTimer, Signal, QRunnable, QThreadPool, Slot
+import curveutils, gui_signals, qt_scheduler
 import signal
-import qt_scheduler as timing2
 from PySide6.QtWidgets import QApplication
-from PySide6 import QtWidgets
-import sys
-import gui
-import gui_signals
  # connect to power supply with this IP Address
 
 #create two vectors and populate them with the values from a one diode model
@@ -30,10 +22,10 @@ def print_measured_points(supply):
     print(supply.measuredpoints)
     return
     
-psu_com = timing2.semaphore(semaphore_name="psu_com")
+psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
 
 set_supply = curveutils.setter(U_1, I_1)
-sched = timing2.Scheduler(tick_ms=1)
+sched = qt_scheduler.Scheduler(tick_ms=1)
 sched.add_periodic(
     "measure",
     period_s=0.01,
