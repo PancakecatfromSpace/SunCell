@@ -2,7 +2,7 @@
 To whever is cursed to edit this after I'm gone, Professor Teigelkötter told me that this programm is irrelevant and that I should do
 it past work hours. I'm not getting payed, I have to spend time outside of my studies to get the funds for my studies. I'm tired of 
 this. These guys wanted me gone from day one. Think about your situation. Is your time worthless? Should your efforts always
-be in vain? Then stay here and keep working for this guy. I won't.
+be in vain? Then stay here and keep working for this guy. I won't. 
 """
 
 import gui_signals, qt_scheduler
