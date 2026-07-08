@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1VrldyK.ui'
+## Form generated from reading UI file 'supply_UI_1MtsVoy.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -426,14 +426,14 @@ class Ui_Dialog(object):
 
         self.verticalLayout_3.addWidget(self.irradiance_input_field)
 
-        self.on_botton_2 = QPushButton(self.curve_control)
-        self.on_botton_2.setObjectName(u"on_botton_2")
-        sizePolicy.setHeightForWidth(self.on_botton_2.sizePolicy().hasHeightForWidth())
-        self.on_botton_2.setSizePolicy(sizePolicy)
-        self.on_botton_2.setMaximumSize(QSize(16777215, 150))
-        self.on_botton_2.setCheckable(True)
+        self.curve_on_off = QPushButton(self.curve_control)
+        self.curve_on_off.setObjectName(u"curve_on_off")
+        sizePolicy.setHeightForWidth(self.curve_on_off.sizePolicy().hasHeightForWidth())
+        self.curve_on_off.setSizePolicy(sizePolicy)
+        self.curve_on_off.setMaximumSize(QSize(16777215, 150))
+        self.curve_on_off.setCheckable(True)
 
-        self.verticalLayout_3.addWidget(self.on_botton_2)
+        self.verticalLayout_3.addWidget(self.curve_on_off)
 
 
         self.horizontalLayout_4.addLayout(self.verticalLayout_3)
@@ -471,7 +471,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(0)
+        self.option_tabs.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -498,7 +498,7 @@ class Ui_Dialog(object):
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
-        self.on_botton_2.setText(QCoreApplication.translate("Dialog", u"On", None))
+        self.curve_on_off.setText(QCoreApplication.translate("Dialog", u"On", None))
         self.import_button.setText(QCoreApplication.translate("Dialog", u"Import", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.curve_control), QCoreApplication.translate("Dialog", u"Curve control", None))
     # retranslateUi

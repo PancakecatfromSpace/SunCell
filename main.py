@@ -18,7 +18,7 @@ def print_once():
     
 psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
 
-sched = qt_scheduler.Scheduler(tick_ms=1)
+sched = gui_signals.sched
 sched.add_periodic(
     "measure_set",
     period_s=0.01,

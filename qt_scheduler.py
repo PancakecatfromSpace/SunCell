@@ -23,7 +23,7 @@ Structure
    - Represents one periodic task.
    - Stores:
      - name: identifier for logging/signals
-     - period_s: desired execution period
+     - period_s: desired execution period, if Zero the job will be run once and be deleted from the list
      - func: user-supplied callable
      - args / kwargs: static parameters passed to func
      - semaphores: list of semaphore objects required for safe execution
@@ -72,7 +72,7 @@ class semaphore:
 class Job:
     # Structure the job with a list of semaphores and the function to be called upon
     name: str
-    period_s: float
+    period_s: float # if this is zero the job will only be run once
     func: callable
     args: tuple = field(default_factory=tuple)
     kwargs: dict = field(default_factory=dict)
