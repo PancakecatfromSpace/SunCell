@@ -160,6 +160,7 @@ class Scheduler(QObject):
                 next_deadline=next_deadline,
             )
         )
+        
 
     def start_all(self):
         """
@@ -233,7 +234,13 @@ class Scheduler(QObject):
                     break
             if any_held:
                 continue
-
+            if job.period_s == 0:
+                runnable = PSURunnable(job, now, self)
+                runnable.signals.failed.connect(lambda name, err: print(f"{name} failed: {err}"))
+                #print("Jupp, a job was added that ran once.")
+                self._pool.start(runnable)
+                self._jobs.remove(job)
+                continue
             if now >= job.next_deadline:
                 elapsed = int((now - job.next_deadline) / job.period_s) + 1
                 job.next_deadline += elapsed * job.period_s
@@ -241,3 +248,7 @@ class Scheduler(QObject):
                 runnable = PSURunnable(job, now, self)
                 runnable.signals.failed.connect(lambda name, err: print(f"{name} failed: {err}"))
                 self._pool.start(runnable)
+                continue
+            # jobs with a value of 0 in the next deadline field are to be run once before removing them from the job list
+            
+
