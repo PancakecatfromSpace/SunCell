@@ -16,9 +16,11 @@ def print_once():
     print("This only ran once.")
     return
     
-psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
+
 
 sched = gui_signals.sched
+
+"""
 sched.add_periodic(
     "measure_set",
     period_s=0.01,
@@ -28,7 +30,6 @@ sched.add_periodic(
     start_immediately=True,
     semaphores=[psu_com]
 )
-
 sched.add_periodic(
     "print",
     period_s=1,
@@ -45,7 +46,7 @@ sched.add_periodic(
     kwargs={},
     start_immediately=True
 )
-
+"""
 
 
 app = QApplication([])

@@ -10,6 +10,7 @@ import power_supply_drivers.wrapper as coms
 
 #placed this here temporarily, should be able to be removed later when the connect feature has been added to the GUI
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA")
+
 #placed this here temporarily, should be able to be removed later when the features for editing the values has been added to the GUI
 #create two vectors and populate them with the values from a one diode model
 U_1, I_1 = curveutils.solarIV(4, 50, 8.75e-3, 4.0, 25.7e-3, 3e-3, 1000, 10000)
@@ -26,15 +27,30 @@ class MainDialog(QtWidgets.QDialog):
     
     def __init__(self, parent = None):
         super().__init__(parent)
+        #mode variable saves the state the UI and supply is in
+        self.mode = "init"
 
         self.ui = gui.Ui_Dialog()
         self.ui.setupUi(self)
-        #eddited the value of the initial voltage to 5, by suggestion by Rüdiger Mann 27.04.26, stub left here as initial thing to run
-        #kinda out of place here, best to be removed later since it relies on I_1 being available in the namespace of the class definition
-        supply.setValues(5, I_1.max()*1.1, 3000.0)
+
+        # make sure to start on the connection index
+        self.ui.option_tabs.setCurrentIndex(0)
+
+        for i in range(self.ui.option_tabs.count()):
+            self.ui.option_tabs.setTabEnabled(i, i == 0)
+
+        
         # connect display signals
         measure_signal.measurement_changed.connect(self.on_measurement)
         # connect pushbutton signals
+        #connect connection failed or sucessfull signals
+        # start with only connect tab enabled
+        self._set_tabs_connected(False)
+        self._connect_bridge = ConnectBridge(supply)
+        self._connect_bridge.connected.connect(self.on_connection_result)
+
+        self.connect_to_supply()
+        #on off buttons
         self.ui.curve_on_off.toggled.connect(self.toggle_power_curve_control)
         self.ui.on_botton.toggled.connect(self.toggle_power_curve_control)
     def on_measurement(self, voltage, current, power):
@@ -61,8 +77,42 @@ class MainDialog(QtWidgets.QDialog):
                 b1.setChecked(checked)
         finally:
             self._sync_block = False
-        
+        # actually do something when the button is pressed
         measure_signal.turn_on_off(checked)
+    def _set_tabs_connected(self, ok: bool):
+        for i in range(self.ui.option_tabs.count()):
+            self.ui.option_tabs.setTabEnabled(i, (i == 0) or ok)
+
+    @Slot(bool, str)
+    def on_connection_result(self, ok: bool, msg: str):
+        if not ok:
+            self._set_tabs_connected(False)
+            return
+
+        self._set_tabs_connected(True)
+
+        sched.add_periodic(
+            "measure_set",
+            period_s=0.01,
+            func=measure_signal.measure_emit_set,
+            args=(),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[psu_com],
+        )
+
+
+    def connect_to_supply(self):
+        # schedule connect (report result)
+        sched.add_periodic(
+            "connect",
+            period_s=0,
+            func=self._connect_bridge.connect_and_report,
+            args=(),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[psu_com],
+        )
 
 class psu_measure_signal(QObject):
     """
@@ -128,7 +178,34 @@ class psu_measure_signal(QObject):
             )
 
         return
+
+class ConnectBridge(QObject):
+    """
+    See if the attempt to connect times out and connect it to a signal that can be processed by the UI
+    """
+    connected = Signal(bool, str)  # (ok, message)
+
+    def __init__(self, supply):
+        super().__init__()
+        self.supply = supply
+
+    @Slot()
+    def connect_and_report(self):
+        try:
+            # If your supply.connect supports a timeout parameter, use it here.
+            # e.g.: self.supply.connect(timeout_s=5)
+            self.supply.connect()
+            self.connected.emit(True, "")
+        except TimeoutError as e:
+            self.connected.emit(False, str(e) or "Connection timed out")
+        except Exception as e:
+            self.connected.emit(False, str(e))
+
 # defines scheduler so it can be accessed at the relevant locations
-sched = qt_scheduler.Scheduler(tick_ms=1)        
+sched = qt_scheduler.Scheduler(tick_ms=1)
+# define semaphores
+psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")        
 # functions from the before created clases to be added to the scheduler
 measure_signal = psu_measure_signal(sched, supply, set_supply)
+#wrap the supply into another class that can handle the raised exceptions and signal them to the UI
+supply_qt_signals = ConnectBridge(supply)
