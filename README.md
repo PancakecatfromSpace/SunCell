@@ -4,6 +4,8 @@ A Python program for my bachelor's thesis that simulates a solar cell under vary
 
 My Professor told me a month before my thesis was due that the software is irrelevant in his eyes and he wants me to do it past working hours. So this and the source code comments is all the documentation you're gonna get. 
 
+There's a UI that sends signals to a scheduler. The scheduler then figures out which job to run next. There's a file with stuff related to solar simulations. 
+
 Good luck.
 
 # Requirements
