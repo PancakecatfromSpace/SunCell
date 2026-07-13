@@ -12,24 +12,12 @@ from PySide6.QtWidgets import QApplication
 def print_measured_points(supply):
     print(supply.measuredpoints)
     return
-def print_once():
-    print("This only ran once.")
-    return
-    
 
 
 sched = gui_signals.sched
 
 """
-sched.add_periodic(
-    "measure_set",
-    period_s=0.01,
-    func=gui_signals.measure_signal.measure_emit_set,
-    args=(),          # only supply is static
-    kwargs={},
-    start_immediately=True,
-    semaphores=[psu_com]
-)
+
 sched.add_periodic(
     "print",
     period_s=1,
@@ -38,14 +26,7 @@ sched.add_periodic(
     kwargs={},
     start_immediately=True
 )
-sched.add_periodic(
-    "print_once",
-    period_s=0,
-    func=print_once,
-    args=(),          # only supply is static
-    kwargs={},
-    start_immediately=True
-)
+
 """
 
 
