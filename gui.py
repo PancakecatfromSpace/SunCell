@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1MtsVoy.ui'
+## Form generated from reading UI file 'supply_UI_1rBBYKh.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -471,7 +471,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(3)
+        self.option_tabs.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -483,11 +483,19 @@ class Ui_Dialog(object):
         self.power_label.setText(QCoreApplication.translate("Dialog", u"Current", None))
         self.current_label.setText(QCoreApplication.translate("Dialog", u"Power", None))
         self.port_label.setText(QCoreApplication.translate("Dialog", u"Port:", None))
+        self.port_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.ip_address_label.setText(QCoreApplication.translate("Dialog", u"IP Address:", None))
         self.connect_button.setText(QCoreApplication.translate("Dialog", u"Connect", None))
+        self.ip_address_field.setInputMask(QCoreApplication.translate("Dialog", u"000.000.000.000", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.connection), QCoreApplication.translate("Dialog", u"Connection", None))
         self.apply_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.on_botton.setText(QCoreApplication.translate("Dialog", u"On", None))
+        self.input_field_current.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
+        self.input_field_current.setText(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.input_field_voltage.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
+        self.input_field_voltage.setText(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.input_field_power.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
+        self.input_field_power.setText(QCoreApplication.translate("Dialog", u"0.0", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.manuel), QCoreApplication.translate("Dialog", u"Manuel", None))
         self.label_parralel_cells.setText(QCoreApplication.translate("Dialog", u"cell_p (solar cells in parralel):", None))
         self.label_series_cells.setText(QCoreApplication.translate("Dialog", u"cell_s (solar cells in series):", None))
