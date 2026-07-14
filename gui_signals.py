@@ -170,18 +170,7 @@ class MainDialog(QtWidgets.QDialog):
         Deal with what to do when the apply button in the manual tab is pressed. Basically: throw out the measure_set task so the supply stops 
         simulating a solar array and start to measure only.
         """
-        #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
-        sched.remove_job("measure_set")
-        
-        sched.add_periodic(
-            'measure',
-            period_s=0.01,
-            func=measure_signal.emit_new_values,
-            args=(),
-            kwargs={},
-            start_immediately=True,
-            semaphores=[psu_com],
-        )
+
         
         #send out manual values
         measure_signal.set_values_manual(self.voltage, self.current, self.power)
@@ -264,9 +253,22 @@ class psu_measure_signal(QObject):
     def set_values_manual(self, voltage, current, power):
         #logic to delete job for running it all continousely and set voltage manually
         #print("Setting values Manually.")
+        #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
+        sched.remove_job("measure_set")
+        
+        sched.add_periodic(
+            'measure',
+            period_s=0.01,
+            func=measure_signal.emit_new_values,
+            args=(),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[psu_com],
+        )
+        self.scheduler.remove_job("set_values")
         self.scheduler.add_periodic(
                 "set_values",
-                period_s=0,
+                period_s=0.5,
                 func=self.supply.setValues,
                 args=(voltage,current,power,),          # only supply is static
                 kwargs={},
@@ -305,6 +307,8 @@ class ConnectBridge(QObject):
         except Exception as e:
             self.connected.emit(False, str(e))
         print(self.supply.socketvalues)
+
+
 
 
 # defines scheduler so it can be accessed at the relevant locations
