@@ -14,7 +14,7 @@ def print_measured_points(supply):
     return
 
 
-sched = gui_signals.sched
+sched = gui_signals.scheduling.scheduler
 
 """
 
@@ -31,7 +31,7 @@ sched.add_periodic(
 
 
 app = QApplication([])
-gui_window = gui_signals.MainDialog()
+gui_window = gui_signals.MainDialog(gui_signals.scheduling)
 gui_window.show()
 
 sched.start_all()

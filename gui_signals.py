@@ -25,8 +25,11 @@ class MainDialog(QtWidgets.QDialog):
     This class wraps the gui.py file into a new QDialog, this way the singals and connections can be handled without directly editing gui.py.
     """
     
-    def __init__(self, parent = None):
+    def __init__(self,scheduling,parent = None ):
         super().__init__(parent)
+        #safe the scheduling wrapper class as attribute
+        self.scheduling = scheduling
+
         #mode variable saves the state the UI and supply is in
         self.mode = "init"
 
@@ -41,12 +44,12 @@ class MainDialog(QtWidgets.QDialog):
 
         
         # connect display signals
-        measure_signal.measurement_changed.connect(self.on_measurement)
+        self.scheduling.measure_signal.measurement_changed.connect(self.on_measurement)
         # connect pushbutton signals
         #connect connection failed or sucessfull signals
         # start with only connect tab enabled
         self._set_tabs_connected(False)
-        self._connect_bridge = ConnectBridge(supply)
+        self._connect_bridge = self.scheduling.connect_bridge
         self._connect_bridge.connected.connect(self.on_connection_result)
         self.ui.connect_button.clicked.connect(self.connect_to_supply)
         #on off buttons
@@ -68,9 +71,9 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
         # dials
         #set max values to dials
-        self.ui.voltage_dial.setMaximum(measure_signal.supply.valuelimits.MAX_VOLT)
-        self.ui.current_dial.setMaximum(measure_signal.supply.valuelimits.MAX_CUR)
-        self.ui.power_dial.setMaximum(measure_signal.supply.valuelimits.MAX_POWER)
+        self.ui.voltage_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT)
+        self.ui.current_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_CUR)
+        self.ui.power_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_POWER)
         #connect changed dial value to something meaningful
         self.ui.voltage_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
@@ -103,7 +106,7 @@ class MainDialog(QtWidgets.QDialog):
         finally:
             self._sync_block = False
         # actually do something when the button is pressed
-        measure_signal.turn_on_off(checked)
+        self.scheduling.measure_signal.turn_on_off(checked)
     def _set_tabs_connected(self, ok: bool):
         for i in range(self.ui.option_tabs.count()):
             self.ui.option_tabs.setTabEnabled(i, (i == 0) or ok)
@@ -119,7 +122,7 @@ class MainDialog(QtWidgets.QDialog):
             return
 
         self._set_tabs_connected(True)
-        
+        """
         sched.add_periodic(
             "measure_set",
             period_s=0.01,
@@ -129,12 +132,15 @@ class MainDialog(QtWidgets.QDialog):
             start_immediately=True,
             semaphores=[psu_com],
         )
+        """
+        self.scheduling.measure()
         
 
 
     def connect_to_supply(self):
         # schedule connect (report result)
         #print(self.ip_address)
+        """
         sched.add_periodic(
             "connect",
             period_s=0,
@@ -144,6 +150,8 @@ class MainDialog(QtWidgets.QDialog):
             start_immediately=True,
             semaphores=[psu_com],
         )
+        """
+        scheduling.connect(self.ip_address, self.port)
         #print(self._connect_bridge.supply.socketvalues)
     def handle_ip_port_input(self):
         """
@@ -173,7 +181,7 @@ class MainDialog(QtWidgets.QDialog):
 
         
         #send out manual values
-        measure_signal.set_values_manual(self.voltage, self.current, self.power)
+        scheduling.measure_signal.set_values_manual(self.voltage, self.current, self.power)
         #set the dials to the values put into the text fields
         self.ui.voltage_dial.setValue(int(self.voltage))
         self.ui.current_dial.setValue(int(self.current))
@@ -191,11 +199,11 @@ class psu_measure_signal(QObject):
     """
     measurement_changed = Signal(float, float, float)
 
-    def __init__(self, scheduler, supply, setter, parent = None):
+    def __init__(self, scheduling, supply, setter, parent = None):
         super().__init__(parent)
         self.supply = supply
         self.setter = setter
-        self.scheduler = scheduler
+        self.scheduling = scheduling
 
     @Slot()
     def emit_new_values(self):
@@ -224,12 +232,13 @@ class psu_measure_signal(QObject):
         """
         Defines the necessary commands for turning the supply on and off and schedules them accordingly.
         """
+        """
         # set commands as variable, commands are taken from tti documentation, must be modified if other supply is used
         turn_on = ("OP1 1")
         turn_off = ("OP1 0")
         psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
         if on:
-            self.scheduler.add_periodic(
+            self.scheduling.scheduler.add_periodic(
                 "turn_on",
                 period_s=0,
                 func=self.supply.sendOnly,
@@ -248,12 +257,15 @@ class psu_measure_signal(QObject):
                 start_immediately=True,
                 semaphores=[psu_com]
             )
+        """
+        scheduling.on_off(on)
 
         return
     def set_values_manual(self, voltage, current, power):
         #logic to delete job for running it all continousely and set voltage manually
         #print("Setting values Manually.")
         #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
+        """
         sched.remove_job("measure_set")
         
         sched.add_periodic(
@@ -275,7 +287,8 @@ class psu_measure_signal(QObject):
                 start_immediately=True,
                 semaphores=[psu_com]
             )
-        
+        """
+        scheduling.measure_manual(voltage, current, power)
         #print(self.supply.setpoints)
 
 
@@ -308,12 +321,103 @@ class ConnectBridge(QObject):
             self.connected.emit(False, str(e))
         print(self.supply.socketvalues)
 
+class scheduling():
+    """
+    This class wraps all scheduling tasks. Some jobs cannot run while other jobs are running, for example the measure_set function can never run at the
+    same time as the measure job.
+    """
+    def __init__(self, supply:coms.SupplyCommunication, setter:curveutils.setter, tick_ms:int = 1):
+        self.scheduler = qt_scheduler.Scheduler(tick_ms=tick_ms)
+        self.psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
+        self.supply = supply
+        self.measure_signal = psu_measure_signal(self, self.supply, setter)
+        self.connect_bridge = ConnectBridge(self.supply)
+    def connect(self, ip_address:str, port:int):
+        """
+        Scheduler the connect job to connect the power supply.
+        Args:
+        ip_address(str): IP Adress to connect the supply to.
+        port(int): port to connect the supply to.
+        """
+        self.scheduler.add_periodic(
+            "connect",
+            period_s=0,
+            func=self.connect_bridge.connect_and_report,
+            args=(ip_address, port,),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[self.psu_com],
+        )
+    def on_off(self, on:bool):
+        turn_on = ("OP1 1")
+        turn_off = ("OP1 0")
+        psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
+        if on:
+            self.scheduler.add_periodic(
+                "turn_on",
+                period_s=0,
+                func=self.supply.sendOnly,
+                args=(turn_on,),          # only supply is static
+                kwargs={},
+                start_immediately=True,
+                semaphores=[self.psu_com]
+            )
+        else:
+            self.scheduler.add_periodic(
+                "turn_off",
+                period_s=0,
+                func=self.supply.sendOnly,
+                args=(turn_off,),          # only supply is static
+                kwargs={},
+                start_immediately=True,
+                semaphores=[self.psu_com]
+            )
+    def measure(self):
+        """
+        Sets only the job that measures and updates the UI
+        """
+        self.scheduler.remove_job("measure_set")
+        self.scheduler.remove_job("set_values")
 
+        self.scheduler.add_periodic(
+            name="measure",
+            period_s=0.01,
+            func=self.measure_signal.emit_new_values,
+            semaphores=[self.psu_com],
+            start_immediately=True,
+        )
+
+    def measure_manual(self, voltage:float, current:float, power:float):
+        """
+        Delete the measure_set job and start the measuring job before creating the set_values job setting the currently given values for manual control.
+        """
+        self.scheduler.remove_job("measure_set")
+        
+        self.scheduler.add_periodic(
+            'measure',
+            period_s=0.01,
+            func=self.measure_signal.emit_new_values,
+            args=(),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[self.psu_com],
+        )
+        self.scheduler.remove_job("set_values")
+        self.scheduler.add_periodic(
+            "set_values",
+            period_s=0.5,
+            func=self.supply.setValues,
+            args=(voltage,current,power,),          # only supply is static
+            kwargs={},
+            start_immediately=True,
+            semaphores=[self.psu_com]
+        )
 
 
 # defines scheduler so it can be accessed at the relevant locations
-sched = qt_scheduler.Scheduler(tick_ms=1)
+#sched = qt_scheduler.Scheduler(tick_ms=1)
+#measure_signal = psu_measure_signal(scheduling.scheduler, supply, set_supply)
+scheduling = scheduling(supply, set_supply)
 # define semaphores
-psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")        
+       
 # functions from the before created clases to be added to the scheduler
-measure_signal = psu_measure_signal(sched, supply, set_supply)
