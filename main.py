@@ -4,31 +4,11 @@ it past work hours. I'm not getting payed, I have to spend time outside of my st
 this. These guys wanted me gone from day one. Think about your situation. Is your time worthless? Should your efforts always
 be in vain? Then stay here and keep working for this guy. I won't. 
 """
-
 import gui_signals, qt_scheduler
 import signal
 from PySide6.QtWidgets import QApplication
 
-def print_measured_points(supply):
-    print(supply.measuredpoints)
-    return
-
-
 sched = gui_signals.scheduling.scheduler
-
-"""
-
-sched.add_periodic(
-    "print",
-    period_s=1,
-    func=print_measured_points,
-    args=(gui_signals.supply,),          # only supply is static
-    kwargs={},
-    start_immediately=True
-)
-
-"""
-
 
 app = QApplication([])
 gui_window = gui_signals.MainDialog(gui_signals.scheduling)
