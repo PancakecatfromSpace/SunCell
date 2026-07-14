@@ -76,6 +76,9 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.power_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
     def on_measurement(self, voltage, current, power):
+        """
+        Handles the update of the LCD Displays at the top of the screen.
+        """
         self.ui.voltage_display.display(voltage)
         self.ui.current_display.display(current)
         self.ui.power_display.display(power)
@@ -107,6 +110,10 @@ class MainDialog(QtWidgets.QDialog):
 
     @Slot(bool, str)
     def on_connection_result(self, ok: bool, msg: str):
+        """
+        Deals with the result of attempting to set up the connection. If the connection is succesfull start measuring the outputs of the supply and enable
+        the other tabs within the UI. 
+        """
         if not ok:
             self._set_tabs_connected(False)
             return
@@ -139,10 +146,16 @@ class MainDialog(QtWidgets.QDialog):
         )
         #print(self._connect_bridge.supply.socketvalues)
     def handle_ip_port_input(self):
+        """
+        Handles the signals sent by editing the values for Port and IP Address.
+        """
         self.ip_address = self.ui.ip_address_field.text()
         self.port = self.ui.port_field.text()
         #print(self.ip_address)
     def handle_voltage_current_power_input(self):
+        """
+        Takes the text created by entering values into the fields for voltage current and power in the Manual tab.
+        """
         self.voltage = float(self.ui.input_field_voltage.text())
         self.current = float(self.ui.input_field_current.text())
         self.power = float(self.ui.input_field_power.text())
@@ -153,6 +166,10 @@ class MainDialog(QtWidgets.QDialog):
         return
     @Slot()
     def apply_manual(self):
+        """
+        Deal with what to do when the apply button in the manual tab is pressed. Basically: throw out the measure_set task so the supply stops 
+        simulating a solar array and start to measure only.
+        """
         #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
         sched.remove_job("measure_set")
         
@@ -215,6 +232,9 @@ class psu_measure_signal(QObject):
         self.emit_new_values()
         self.determine_set_output()
     def turn_on_off(self, on:bool):
+        """
+        Defines the necessary commands for turning the supply on and off and schedules them accordingly.
+        """
         # set commands as variable, commands are taken from tti documentation, must be modified if other supply is used
         turn_on = ("OP1 1")
         turn_off = ("OP1 0")
@@ -259,7 +279,8 @@ class psu_measure_signal(QObject):
 
 class ConnectBridge(QObject):
     """
-    See if the attempt to connect times out and connect it to a signal that can be processed by the UI
+    See if the attempt to connect times out and connect it to a signal that can be processed by the UI. Used to determine weather the other tabs should be
+    enabled or remain grayed out.
     """
     connected = Signal(bool, str)  # (ok, message)
 
