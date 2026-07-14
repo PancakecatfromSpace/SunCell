@@ -9,7 +9,7 @@ import gui, curveutils, qt_scheduler
 import power_supply_drivers.wrapper as coms
 
 #placed this here temporarily, should be able to be removed later when the connect feature has been added to the GUI
-supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA")
+supply = coms.SupplyCommunication("10.30.0.111", lookup = "tti", port = 9221, type="VISA")
 
 #placed this here temporarily, should be able to be removed later when the features for editing the values has been added to the GUI
 #create two vectors and populate them with the values from a one diode model
@@ -48,11 +48,33 @@ class MainDialog(QtWidgets.QDialog):
         self._set_tabs_connected(False)
         self._connect_bridge = ConnectBridge(supply)
         self._connect_bridge.connected.connect(self.on_connection_result)
-
-        self.connect_to_supply()
+        self.ui.connect_button.clicked.connect(self.connect_to_supply)
         #on off buttons
         self.ui.curve_on_off.toggled.connect(self.toggle_power_curve_control)
         self.ui.on_botton.toggled.connect(self.toggle_power_curve_control)
+        #apply buttons
+        self.ui.apply_button.clicked.connect(self.apply_manual)
+        #text input fields for IP and Port
+        self.ip_address = None
+        self.port = None
+        self.ui.ip_address_field.textChanged.connect(self.handle_ip_port_input)
+        self.ui.port_field.textChanged.connect(self.handle_ip_port_input)
+        #text input fields for voltage, current and power
+        self.voltage = None
+        self.current = None
+        self.power = None
+        self.ui.input_field_voltage.textChanged.connect(self.handle_voltage_current_power_input)
+        self.ui.input_field_current.textChanged.connect(self.handle_voltage_current_power_input)
+        self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
+        # dials
+        #set max values to dials
+        self.ui.voltage_dial.setMaximum(measure_signal.supply.valuelimits.MAX_VOLT)
+        self.ui.current_dial.setMaximum(measure_signal.supply.valuelimits.MAX_CUR)
+        self.ui.power_dial.setMaximum(measure_signal.supply.valuelimits.MAX_POWER)
+        #connect changed dial value to something meaningful
+        self.ui.voltage_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
+        self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
+        self.ui.power_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
     def on_measurement(self, voltage, current, power):
         self.ui.voltage_display.display(voltage)
         self.ui.current_display.display(current)
@@ -90,7 +112,7 @@ class MainDialog(QtWidgets.QDialog):
             return
 
         self._set_tabs_connected(True)
-
+        
         sched.add_periodic(
             "measure_set",
             period_s=0.01,
@@ -100,19 +122,60 @@ class MainDialog(QtWidgets.QDialog):
             start_immediately=True,
             semaphores=[psu_com],
         )
+        
 
 
     def connect_to_supply(self):
         # schedule connect (report result)
+        #print(self.ip_address)
         sched.add_periodic(
             "connect",
             period_s=0,
             func=self._connect_bridge.connect_and_report,
+            args=(self.ip_address, self.port,),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[psu_com],
+        )
+        #print(self._connect_bridge.supply.socketvalues)
+    def handle_ip_port_input(self):
+        self.ip_address = self.ui.ip_address_field.text()
+        self.port = self.ui.port_field.text()
+        #print(self.ip_address)
+    def handle_voltage_current_power_input(self):
+        self.voltage = float(self.ui.input_field_voltage.text())
+        self.current = float(self.ui.input_field_current.text())
+        self.power = float(self.ui.input_field_power.text())
+    def handle_voltage_current_power_dial(self):
+        self.voltage = float(self.ui.voltage_dial.value())
+        self.current = float(self.ui.current_dial.value())
+        self.power = float(self.ui.power_dial.value())
+        return
+    @Slot()
+    def apply_manual(self):
+        #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
+        sched.remove_job("measure_set")
+        
+        sched.add_periodic(
+            'measure',
+            period_s=0.01,
+            func=measure_signal.emit_new_values,
             args=(),
             kwargs={},
             start_immediately=True,
             semaphores=[psu_com],
         )
+        
+        #send out manual values
+        measure_signal.set_values_manual(self.voltage, self.current, self.power)
+        #set the dials to the values put into the text fields
+        self.ui.voltage_dial.setValue(int(self.voltage))
+        self.ui.current_dial.setValue(int(self.current))
+        self.ui.power_dial.setValue(int(self.power))
+        #set the text tields to the values put in by the dials
+        self.ui.input_field_voltage.setText(str(self.voltage))
+        self.ui.input_field_current.setText(str(self.current))
+        self.ui.input_field_power.setText(str(self.power))
 
 class psu_measure_signal(QObject):
     """
@@ -178,6 +241,21 @@ class psu_measure_signal(QObject):
             )
 
         return
+    def set_values_manual(self, voltage, current, power):
+        #logic to delete job for running it all continousely and set voltage manually
+        #print("Setting values Manually.")
+        self.scheduler.add_periodic(
+                "set_values",
+                period_s=0,
+                func=self.supply.setValues,
+                args=(voltage,current,power,),          # only supply is static
+                kwargs={},
+                start_immediately=True,
+                semaphores=[psu_com]
+            )
+        
+        #print(self.supply.setpoints)
+
 
 class ConnectBridge(QObject):
     """
@@ -190,16 +268,23 @@ class ConnectBridge(QObject):
         self.supply = supply
 
     @Slot()
-    def connect_and_report(self):
+    def connect_and_report(self, ip, port):
+        print("Attempting to connect...")
         try:
             # If your supply.connect supports a timeout parameter, use it here.
             # e.g.: self.supply.connect(timeout_s=5)
+            if ip is not None:
+                self.supply.socketvalues.SUPPLY_IP = ip
+            if port is not None:
+                self.supply.socketvalues.SUPPLY_PORT = port
             self.supply.connect()
             self.connected.emit(True, "")
         except TimeoutError as e:
             self.connected.emit(False, str(e) or "Connection timed out")
         except Exception as e:
             self.connected.emit(False, str(e))
+        print(self.supply.socketvalues)
+
 
 # defines scheduler so it can be accessed at the relevant locations
 sched = qt_scheduler.Scheduler(tick_ms=1)
@@ -207,5 +292,3 @@ sched = qt_scheduler.Scheduler(tick_ms=1)
 psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")        
 # functions from the before created clases to be added to the scheduler
 measure_signal = psu_measure_signal(sched, supply, set_supply)
-#wrap the supply into another class that can handle the raised exceptions and signal them to the UI
-supply_qt_signals = ConnectBridge(supply)
