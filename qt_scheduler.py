@@ -147,6 +147,11 @@ class Scheduler(QObject):
         """
         if kwargs is None:
             kwargs = {}
+        #check if there's a job with that name available, don't add job if it has same name
+        for job in self._jobs:
+            if job.name == name:
+                print("Attempted to add job with same name. Ignoring.")
+                return
         now = time.monotonic()
         next_deadline = now if start_immediately else (now + period_s)
         self._jobs.append(
@@ -179,6 +184,17 @@ class Scheduler(QObject):
             return
         self._stoped = True
         self._tick.stop()
+    
+    def remove_job(self, job_name:str):
+        """
+        Searches the job list for a job with the name job_name and removes it.
+        """
+        for job in self._jobs:
+            if job.name == job_name:
+                self._jobs.remove(job)
+
+
+
 
     def __del__(self):
         """
