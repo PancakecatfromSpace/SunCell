@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1rBBYKh.ui'
+## Form generated from reading UI file 'supply_UI_1ICulFN.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -145,6 +145,7 @@ class Ui_Dialog(object):
         self.voltage_dial = QDial(self.manuel)
         self.voltage_dial.setObjectName(u"voltage_dial")
         self.voltage_dial.setMinimumSize(QSize(0, 150))
+        self.voltage_dial.setSingleStep(1)
         self.voltage_dial.setWrapping(False)
         self.voltage_dial.setNotchesVisible(True)
 
@@ -471,7 +472,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(0)
+        self.option_tabs.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -498,14 +499,21 @@ class Ui_Dialog(object):
         self.input_field_power.setText(QCoreApplication.translate("Dialog", u"0.0", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.manuel), QCoreApplication.translate("Dialog", u"Manuel", None))
         self.label_parralel_cells.setText(QCoreApplication.translate("Dialog", u"cell_p (solar cells in parralel):", None))
+        self.cells_parralel_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_series_cells.setText(QCoreApplication.translate("Dialog", u"cell_s (solar cells in series):", None))
+        self.cells_series_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_saturation_current.setText(QCoreApplication.translate("Dialog", u"I_s (saturation current):", None))
+        self.saturation_current_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_diode_factor.setText(QCoreApplication.translate("Dialog", u"m (diodefactor):", None))
+        self.diodefactor_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_thermalvoltage.setText(QCoreApplication.translate("Dialog", u"U_T (Thermalvoltage):", None))
+        self.thermalvoltage_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_photo_current_coefficient.setText(QCoreApplication.translate("Dialog", u"c_0 (photo current coefficient):", None))
+        self.photo_current_coefficient_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
+        self.irradiance_input_field.setInputMask(QCoreApplication.translate("Dialog", u"000.0", None))
         self.curve_on_off.setText(QCoreApplication.translate("Dialog", u"On", None))
         self.import_button.setText(QCoreApplication.translate("Dialog", u"Import", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.curve_control), QCoreApplication.translate("Dialog", u"Curve control", None))
