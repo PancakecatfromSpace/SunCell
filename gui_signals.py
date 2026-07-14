@@ -122,44 +122,19 @@ class MainDialog(QtWidgets.QDialog):
             return
 
         self._set_tabs_connected(True)
-        """
-        sched.add_periodic(
-            "measure_set",
-            period_s=0.01,
-            func=measure_signal.measure_emit_set,
-            args=(),
-            kwargs={},
-            start_immediately=True,
-            semaphores=[psu_com],
-        )
-        """
+
         self.scheduling.measure()
         
-
-
     def connect_to_supply(self):
-        # schedule connect (report result)
-        #print(self.ip_address)
-        """
-        sched.add_periodic(
-            "connect",
-            period_s=0,
-            func=self._connect_bridge.connect_and_report,
-            args=(self.ip_address, self.port,),
-            kwargs={},
-            start_immediately=True,
-            semaphores=[psu_com],
-        )
-        """
+
         scheduling.connect(self.ip_address, self.port)
-        #print(self._connect_bridge.supply.socketvalues)
+        
     def handle_ip_port_input(self):
         """
         Handles the signals sent by editing the values for Port and IP Address.
         """
         self.ip_address = self.ui.ip_address_field.text()
         self.port = self.ui.port_field.text()
-        #print(self.ip_address)
     def handle_voltage_current_power_input(self):
         """
         Takes the text created by entering values into the fields for voltage current and power in the Manual tab.
@@ -232,32 +207,7 @@ class psu_measure_signal(QObject):
         """
         Defines the necessary commands for turning the supply on and off and schedules them accordingly.
         """
-        """
-        # set commands as variable, commands are taken from tti documentation, must be modified if other supply is used
-        turn_on = ("OP1 1")
-        turn_off = ("OP1 0")
-        psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
-        if on:
-            self.scheduling.scheduler.add_periodic(
-                "turn_on",
-                period_s=0,
-                func=self.supply.sendOnly,
-                args=(turn_on,),          # only supply is static
-                kwargs={},
-                start_immediately=True,
-                semaphores=[psu_com]
-            )
-        else:
-            self.scheduler.add_periodic(
-                "turn_off",
-                period_s=0,
-                func=self.supply.sendOnly,
-                args=(turn_off,),          # only supply is static
-                kwargs={},
-                start_immediately=True,
-                semaphores=[psu_com]
-            )
-        """
+
         scheduling.on_off(on)
 
         return
@@ -265,29 +215,7 @@ class psu_measure_signal(QObject):
         #logic to delete job for running it all continousely and set voltage manually
         #print("Setting values Manually.")
         #this is an unholy hack, but it'll work fine, probably, basically "throw the measure set job out" and "add job that only measures"
-        """
-        sched.remove_job("measure_set")
-        
-        sched.add_periodic(
-            'measure',
-            period_s=0.01,
-            func=measure_signal.emit_new_values,
-            args=(),
-            kwargs={},
-            start_immediately=True,
-            semaphores=[psu_com],
-        )
-        self.scheduler.remove_job("set_values")
-        self.scheduler.add_periodic(
-                "set_values",
-                period_s=0.5,
-                func=self.supply.setValues,
-                args=(voltage,current,power,),          # only supply is static
-                kwargs={},
-                start_immediately=True,
-                semaphores=[psu_com]
-            )
-        """
+
         scheduling.measure_manual(voltage, current, power)
         #print(self.supply.setpoints)
 
