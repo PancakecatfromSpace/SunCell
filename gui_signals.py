@@ -57,6 +57,7 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.on_botton.toggled.connect(self.toggle_power_curve_control)
         #apply buttons
         self.ui.apply_button.clicked.connect(self.apply_manual)
+        self.ui.apply_3d_preview_button.clicked.connect(self.apply_diode_model)
         # Text input fields
         #text input fields for IP and Port
         self.ip_address = None
@@ -70,7 +71,19 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_voltage.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_current.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
-        #text input fields for 
+        #text input fields for diode model related parameters
+        self.cell_p = 4
+        self.cell_s = 50
+        self.i_s = 8.75e-3
+        self.m =  4.0
+        self.u_t = 25.7e-3
+        self.c_0 = 3e-3
+        self.ui.cells_parralel_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.cells_series_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.saturation_current_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.diodefactor_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.thermalvoltage_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.photo_current_coefficient_input_field.textChanged.connect(self.handle_diode_model_fields)
         # dials
         #set max values to dials
         self.ui.voltage_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT)
@@ -80,6 +93,7 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.voltage_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.power_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
+
     def on_measurement(self, voltage, current, power):
         """
         Handles the update of the LCD Displays at the top of the screen.
@@ -109,6 +123,7 @@ class MainDialog(QtWidgets.QDialog):
             self._sync_block = False
         # actually do something when the button is pressed
         self.scheduling.measure_signal.turn_on_off(checked)
+
     def _set_tabs_connected(self, ok: bool):
         for i in range(self.ui.option_tabs.count()):
             self.ui.option_tabs.setTabEnabled(i, (i == 0) or ok)
@@ -126,7 +141,7 @@ class MainDialog(QtWidgets.QDialog):
         self._set_tabs_connected(True)
 
         self.scheduling.measure()
-        
+
     def connect_to_supply(self):
 
         scheduling.connect(self.ip_address, self.port)
@@ -149,14 +164,19 @@ class MainDialog(QtWidgets.QDialog):
         self.current = float(self.ui.current_dial.value())
         self.power = float(self.ui.power_dial.value())
         return
+    def handle_diode_model_fields(self):
+        self.cell_p = float(self.ui.cells_parralel_input_field.text())
+        self.cell_s = float(self.ui.cells_series_input_field.text())
+        self.i_s = float(self.ui.saturation_current_input_field.text())
+        self.m =  float(self.ui.diodefactor_input_field.text())
+        self.u_t = float(self.ui.thermalvoltage_input_field.text())
+        self.c_0 = float(self.ui.photo_current_coefficient_input_field.text())
     @Slot()
     def apply_manual(self):
         """
         Deal with what to do when the apply button in the manual tab is pressed. Basically: throw out the measure_set task so the supply stops 
         simulating a solar array and start to measure only.
         """
-
-        
         #send out manual values
         scheduling.measure_signal.set_values_manual(self.voltage, self.current, self.power)
         #set the dials to the values put into the text fields
@@ -167,14 +187,13 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_voltage.setText(str(self.voltage))
         self.ui.input_field_current.setText(str(self.current))
         self.ui.input_field_power.setText(str(self.power))
-
-
-
+    def apply_diode_model(self):
+        U_1, I_1 = curveutils.solarIV(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0, 1000, 10000)
+        #prepare data before running the controll algorithm, removes too low 
+        U_1, I_1 = curveutils.min_remover(U_1, I_1, 5)
+        U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
+        self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
+        self.scheduling.measure_set_diode_model()
 
 # defines scheduler so it can be accessed at the relevant locations
-#sched = qt_scheduler.Scheduler(tick_ms=1)
-#measure_signal = psu_measure_signal(scheduling.scheduler, supply, set_supply)
 scheduling = qt_wrapper.scheduling(supply, set_supply)
-# define semaphores
-       
-# functions from the before created clases to be added to the scheduler

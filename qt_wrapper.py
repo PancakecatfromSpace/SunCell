@@ -183,3 +183,17 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com]
         )
+    def measure_set_diode_model(self):
+        self.scheduler.remove_job("measure_set")
+        self.scheduler.remove_job("measure")
+        self.scheduler.remove_job("set_values")
+
+        self.scheduler.add_periodic(
+            'measure_set',
+            period_s=0.01,
+            func=self.measure_signal.measure_emit_set,
+            args=(),
+            kwargs={},
+            start_immediately=True,
+            semaphores=[self.psu_com],
+        )
