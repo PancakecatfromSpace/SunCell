@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1ICulFN.ui'
+## Form generated from reading UI file 'supply_UI_1FZIAsd.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -499,9 +499,9 @@ class Ui_Dialog(object):
         self.input_field_power.setText(QCoreApplication.translate("Dialog", u"0.0", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.manuel), QCoreApplication.translate("Dialog", u"Manuel", None))
         self.label_parralel_cells.setText(QCoreApplication.translate("Dialog", u"cell_p (solar cells in parralel):", None))
-        self.cells_parralel_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.cells_parralel_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.label_series_cells.setText(QCoreApplication.translate("Dialog", u"cell_s (solar cells in series):", None))
-        self.cells_series_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.cells_series_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.label_saturation_current.setText(QCoreApplication.translate("Dialog", u"I_s (saturation current):", None))
         self.saturation_current_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_diode_factor.setText(QCoreApplication.translate("Dialog", u"m (diodefactor):", None))
