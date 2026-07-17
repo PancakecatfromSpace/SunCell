@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1FZIAsd.ui'
+## Form generated from reading UI file 'supply_UI_1PwTxur.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -275,6 +275,7 @@ class Ui_Dialog(object):
         self.saturation_current_input_slider = QSlider(self.ui_curve)
         self.saturation_current_input_slider.setObjectName(u"saturation_current_input_slider")
         self.saturation_current_input_slider.setMinimumSize(QSize(250, 0))
+        self.saturation_current_input_slider.setMaximum(999)
         self.saturation_current_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_saturation_current.addWidget(self.saturation_current_input_slider)
@@ -503,13 +504,13 @@ class Ui_Dialog(object):
         self.label_series_cells.setText(QCoreApplication.translate("Dialog", u"cell_s (solar cells in series):", None))
         self.cells_series_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.label_saturation_current.setText(QCoreApplication.translate("Dialog", u"I_s (saturation current):", None))
-        self.saturation_current_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.saturation_current_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.00", None))
         self.label_diode_factor.setText(QCoreApplication.translate("Dialog", u"m (diodefactor):", None))
-        self.diodefactor_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.diodefactor_input_field.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
         self.label_thermalvoltage.setText(QCoreApplication.translate("Dialog", u"U_T (Thermalvoltage):", None))
-        self.thermalvoltage_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.thermalvoltage_input_field.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
         self.label_photo_current_coefficient.setText(QCoreApplication.translate("Dialog", u"c_0 (photo current coefficient):", None))
-        self.photo_current_coefficient_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.photo_current_coefficient_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.00", None))
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
