@@ -184,6 +184,9 @@ class scheduling():
             semaphores=[self.psu_com]
         )
     def measure_set_diode_model(self):
+        """
+        Removes the measure_set job, the measure job and the set_values job and starts a new measure_set job with udpated values.
+        """
         self.scheduler.remove_job("measure_set")
         self.scheduler.remove_job("measure")
         self.scheduler.remove_job("set_values")
