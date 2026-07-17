@@ -58,6 +58,8 @@ class MainDialog(QtWidgets.QDialog):
         #apply buttons
         self.ui.apply_button.clicked.connect(self.apply_manual)
         self.ui.apply_3d_preview_button.clicked.connect(self.apply_diode_model)
+        #reset diode model button
+        self.ui.reset_diode_modell.clicked.connect(self.reset_diode_model)
         # Text input fields
         #text input fields for IP and Port
         self.ip_address = None
@@ -71,13 +73,6 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_voltage.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_current.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
-        #text input fields for diode model related parameters
-        self.cell_p = 4
-        self.cell_s = 50
-        self.i_s = 8.75e-3
-        self.m =  4.0
-        self.u_t = 25.7e-3
-        self.c_0 = 3e-3
         # safe the values as reasonable standard values
         self.cell_p_standard = 4
         self.cell_s_standard = 50
@@ -85,6 +80,13 @@ class MainDialog(QtWidgets.QDialog):
         self.m_standard =  4.0
         self.u_t_standard = 25.7e-3
         self.c_0_standard = 3e-3
+        #text input fields for diode model related parameters
+        self.cell_p = self.cell_p_standard
+        self.cell_s = self.cell_s_standard
+        self.i_s = self.i_s_standard
+        self.m =  self.m_standard
+        self.u_t = self.u_t_standard
+        self.c_0 = self.c_0_standard
         self.ui.cells_parralel_input_field.textChanged.connect(self.handle_diode_model_fields)
         self.ui.cells_parralel_input_field.setText(str(self.cell_p))
         self.ui.cells_series_input_field.textChanged.connect(self.handle_diode_model_fields)
@@ -195,21 +197,26 @@ class MainDialog(QtWidgets.QDialog):
         self.current = float(self.ui.current_dial.value())
         self.power = float(self.ui.power_dial.value())
         return
-    def handle_diode_model_fields(self):
-        try:
-            self.cell_p = int(self.ui.cells_parralel_input_field.text())
-            self.cell_s = int(self.ui.cells_series_input_field.text())
-            self.i_s = float(self.ui.saturation_current_input_field.text()) / 1e3
-            self.m =  float(self.ui.diodefactor_input_field.text())
-            self.u_t = float(self.ui.thermalvoltage_input_field.text()) / 1e3
-            self.c_0 = float(self.ui.photo_current_coefficient_input_field.text()) / 1e3
-        except:
-            self.cell_p = self.cell_p_standard
-            self.cell_s = self.cell_s_standard
-            self.i_s = self.i_s_standard
-            self.m =  self.m_standard
-            self.u_t = self.u_t_standard
-            self.c_0 = self.c_0_standard
+    def handle_diode_model_fields(self, update:bool=True):
+        """
+        Handles the diode model input fields. Can be run as an update or not. If run as an update the values displayed will be updated while ignoring 
+        currently set values.
+        """
+        if update:
+            try:
+                self.cell_p = int(self.ui.cells_parralel_input_field.text())
+                self.cell_s = int(self.ui.cells_series_input_field.text())
+                self.i_s = float(self.ui.saturation_current_input_field.text()) / 1e3
+                self.m =  float(self.ui.diodefactor_input_field.text())
+                self.u_t = float(self.ui.thermalvoltage_input_field.text()) / 1e3
+                self.c_0 = float(self.ui.photo_current_coefficient_input_field.text()) / 1e3
+            except:
+                self.cell_p = self.cell_p_standard
+                self.cell_s = self.cell_s_standard
+                self.i_s = self.i_s_standard
+                self.m =  self.m_standard
+                self.u_t = self.u_t_standard
+                self.c_0 = self.c_0_standard
 
         self.ui.cells_parralel_input_slider.setValue(self.cell_p)
         self.ui.cells_series_input_slider.setValue(self.cell_s)
@@ -217,21 +224,26 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.diodefactor_input_slider.setValue(int(self.m*10))
         self.ui.thermalvoltage_input_slider.setValue(int(self.u_t*10e3))
         self.ui.photo_current_coefficient_input_slider.setValue(int(self.c_0*100e3))
-    def handle_diode_model_sliders(self):
+    def handle_diode_model_sliders(self, update:bool=True):
+        """
+        Handles the diode model sliders. Can be run to read the input and update the values or it can be run so that the values won't be changed and instead 
+        the displays get set to the called for value.
+        """
+        if update:
+            self.cell_p = int(self.ui.cells_parralel_input_slider.value())
+            self.cell_s = int(self.ui.cells_series_input_slider.value())
+            self.i_s = float(self.ui.saturation_current_input_slider.value()) / 1e5
+            self.m = float(self.ui.diodefactor_input_slider.value()) / 10
+            self.u_t = float(self.ui.thermalvoltage_input_slider.value()) / 1e4
         #cells parallel
-        self.cell_p = int(self.ui.cells_parralel_input_slider.value())
         self.ui.cells_parralel_input_field.setText(str(self.cell_p))
         #cells series
-        self.cell_s = int(self.ui.cells_series_input_slider.value())
         self.ui.cells_series_input_field.setText(str(self.cell_s))
         #saturation current
-        self.i_s = float(self.ui.saturation_current_input_slider.value()) / 1e5
         self.ui.saturation_current_input_field.setText(str(self.i_s*100e3))
         #diodefactor
-        self.m = float(self.ui.diodefactor_input_slider.value()) / 10
         self.ui.diodefactor_input_field.setText(str(self.m*100))
         #thermalvoltage
-        self.u_t = float(self.ui.thermalvoltage_input_slider.value()) / 1e4
         self.ui.thermalvoltage_input_field.setText(str(self.u_t*1e4))
         #photo current coefficient
         self.c_0 = float(self.ui.photo_current_coefficient_input_slider.value()) / 1e5
@@ -261,6 +273,19 @@ class MainDialog(QtWidgets.QDialog):
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
         self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
         self.scheduling.measure_set_diode_model()
+    def reset_diode_model(self):
+        """
+        Handles the reset button on the Diode Model tab.
+        Sets back to standard values, triggers handle for updating related fields and sliders
+        """
+        self.cell_p = self.cell_p_standard
+        self.cell_s = self.cell_s_standard
+        self.i_s = self.i_s_standard
+        self.m =  self.m_standard
+        self.u_t = self.u_t_standard
+        self.c_0 = self.c_0_standard
+        self.handle_diode_model_fields(update=False)
+        self.handle_diode_model_sliders(update=False)
 
 # defines scheduler so it can be accessed at the relevant locations
 scheduling = qt_wrapper.scheduling(supply, set_supply)

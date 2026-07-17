@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1bOvwzs.ui'
+## Form generated from reading UI file 'supply_UI_1PKYknk.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -370,10 +370,10 @@ class Ui_Dialog(object):
 
         self.layout_sliders.addLayout(self.layout_photo_current_coefficient)
 
-        self.pushButton = QPushButton(self.ui_curve)
-        self.pushButton.setObjectName(u"pushButton")
+        self.reset_diode_modell = QPushButton(self.ui_curve)
+        self.reset_diode_modell.setObjectName(u"reset_diode_modell")
 
-        self.layout_sliders.addWidget(self.pushButton)
+        self.layout_sliders.addWidget(self.reset_diode_modell)
 
 
         self.horizontalLayout_2.addLayout(self.layout_sliders)
@@ -524,7 +524,7 @@ class Ui_Dialog(object):
         self.thermalvoltage_input_field.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
         self.label_photo_current_coefficient.setText(QCoreApplication.translate("Dialog", u"c_0 (photo current coefficient):", None))
         self.photo_current_coefficient_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.00", None))
-        self.pushButton.setText(QCoreApplication.translate("Dialog", u"Reset", None))
+        self.reset_diode_modell.setText(QCoreApplication.translate("Dialog", u"Reset", None))
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
