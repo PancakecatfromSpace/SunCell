@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1PwTxur.ui'
+## Form generated from reading UI file 'supply_UI_1bOvwzs.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -275,7 +275,9 @@ class Ui_Dialog(object):
         self.saturation_current_input_slider = QSlider(self.ui_curve)
         self.saturation_current_input_slider.setObjectName(u"saturation_current_input_slider")
         self.saturation_current_input_slider.setMinimumSize(QSize(250, 0))
+        self.saturation_current_input_slider.setMinimum(100)
         self.saturation_current_input_slider.setMaximum(999)
+        self.saturation_current_input_slider.setValue(100)
         self.saturation_current_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_saturation_current.addWidget(self.saturation_current_input_slider)
@@ -300,6 +302,8 @@ class Ui_Dialog(object):
         self.diodefactor_input_slider = QSlider(self.ui_curve)
         self.diodefactor_input_slider.setObjectName(u"diodefactor_input_slider")
         self.diodefactor_input_slider.setMinimumSize(QSize(250, 0))
+        self.diodefactor_input_slider.setMinimum(10)
+        self.diodefactor_input_slider.setMaximum(99)
         self.diodefactor_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_diodefactor.addWidget(self.diodefactor_input_slider)
@@ -324,6 +328,8 @@ class Ui_Dialog(object):
         self.thermalvoltage_input_slider = QSlider(self.ui_curve)
         self.thermalvoltage_input_slider.setObjectName(u"thermalvoltage_input_slider")
         self.thermalvoltage_input_slider.setMinimumSize(QSize(250, 0))
+        self.thermalvoltage_input_slider.setMinimum(100)
+        self.thermalvoltage_input_slider.setMaximum(999)
         self.thermalvoltage_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_themalvoltage.addWidget(self.thermalvoltage_input_slider)
@@ -348,6 +354,8 @@ class Ui_Dialog(object):
         self.photo_current_coefficient_input_slider = QSlider(self.ui_curve)
         self.photo_current_coefficient_input_slider.setObjectName(u"photo_current_coefficient_input_slider")
         self.photo_current_coefficient_input_slider.setMinimumSize(QSize(250, 0))
+        self.photo_current_coefficient_input_slider.setMinimum(100)
+        self.photo_current_coefficient_input_slider.setMaximum(999)
         self.photo_current_coefficient_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_photo_current_coefficient.addWidget(self.photo_current_coefficient_input_slider)
@@ -361,6 +369,11 @@ class Ui_Dialog(object):
 
 
         self.layout_sliders.addLayout(self.layout_photo_current_coefficient)
+
+        self.pushButton = QPushButton(self.ui_curve)
+        self.pushButton.setObjectName(u"pushButton")
+
+        self.layout_sliders.addWidget(self.pushButton)
 
 
         self.horizontalLayout_2.addLayout(self.layout_sliders)
@@ -506,11 +519,12 @@ class Ui_Dialog(object):
         self.label_saturation_current.setText(QCoreApplication.translate("Dialog", u"I_s (saturation current):", None))
         self.saturation_current_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.00", None))
         self.label_diode_factor.setText(QCoreApplication.translate("Dialog", u"m (diodefactor):", None))
-        self.diodefactor_input_field.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
+        self.diodefactor_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.0", None))
         self.label_thermalvoltage.setText(QCoreApplication.translate("Dialog", u"U_T (Thermalvoltage):", None))
         self.thermalvoltage_input_field.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
         self.label_photo_current_coefficient.setText(QCoreApplication.translate("Dialog", u"c_0 (photo current coefficient):", None))
         self.photo_current_coefficient_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0.00", None))
+        self.pushButton.setText(QCoreApplication.translate("Dialog", u"Reset", None))
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
