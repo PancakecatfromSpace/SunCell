@@ -3,7 +3,7 @@ This file wraps the signals for the gui.py user interface into it's own file,
 contains the wrappers for the functions to be scheduled and how they connect to the UI.
 """
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker
 from PySide6 import QtWidgets
 import gui, curveutils, qt_scheduler, qt_wrapper
 import power_supply_drivers.wrapper as coms
@@ -266,12 +266,17 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_current.setText(str(self.current))
         self.ui.input_field_power.setText(str(self.power))
     def apply_diode_model(self):
+        """
         U_1, I_1 = curveutils.solarIV(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0, 1000, 10000)
         #prepare data before running the controll algorithm, removes too low 
         U_1, I_1 = curveutils.min_remover(U_1, I_1, 5)
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
+        """
+        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        U_1, I_1 = self.whole_day.return_for_irradiance()
         self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
         self.scheduling.measure_set_diode_model()
+        print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
     def reset_diode_model(self):
         """
         Handles the reset button on the Diode Model tab.
@@ -280,11 +285,36 @@ class MainDialog(QtWidgets.QDialog):
         self.cell_p = self.cell_p_standard
         self.cell_s = self.cell_s_standard
         self.i_s = self.i_s_standard
-        self.m =  self.m_standard
+        self.m = self.m_standard
         self.u_t = self.u_t_standard
         self.c_0 = self.c_0_standard
-        self.handle_diode_model_fields(update=False)
-        self.handle_diode_model_sliders(update=False)
+
+        # Block signals from all diode-model inputs/sliders while resetting
+        blockers = [
+            QSignalBlocker(self.ui.cells_parralel_input_field),
+            QSignalBlocker(self.ui.cells_series_input_field),
+            QSignalBlocker(self.ui.saturation_current_input_field),
+            QSignalBlocker(self.ui.diodefactor_input_field),
+            QSignalBlocker(self.ui.thermalvoltage_input_field),
+            QSignalBlocker(self.ui.photo_current_coefficient_input_field),
+
+            QSignalBlocker(self.ui.cells_parralel_input_slider),
+            QSignalBlocker(self.ui.cells_series_input_slider),
+            QSignalBlocker(self.ui.saturation_current_input_slider),
+            QSignalBlocker(self.ui.diodefactor_input_slider),
+            QSignalBlocker(self.ui.thermalvoltage_input_slider),
+            QSignalBlocker(self.ui.photo_current_coefficient_input_slider),
+        ]
+        # (Keep references alive until end of function)
+
+        try:
+            # Now it’s safe to write all values; handlers won’t re-trigger mid-reset
+            self.handle_diode_model_fields(update=False)
+            self.handle_diode_model_sliders(update=False)
+        finally:
+            # Unblock happens automatically when blockers go out of scope,
+            # but the `finally` ensures cleanup even if something errors.
+            pass
 
 # defines scheduler so it can be accessed at the relevant locations
 scheduling = qt_wrapper.scheduling(supply, set_supply)

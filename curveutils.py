@@ -10,6 +10,96 @@ plotting utilities.
 
 import numpy as np
 from dataclasses import dataclass
+@dataclass(frozen=True)
+class IVCase:
+    """
+    Dataclass for dictionary entry used by whole_day_dict
+    """
+    irradiance: float
+    U: np.ndarray
+    I: np.ndarray
+class whole_day_dict():
+    """
+    Creates a dictionary of arrays for voltages and currents to a corresponding value of irradiance.
+    Utilizes min_remover and stepsize_reducer to prepare the data for the controll algorithms. 
+    """
+    def __init__(self, cell_p:int, cell_s:int, I_s:float, m:float, U_T:float, c_0:float, steps:int, irradiance_min:int, irradiance_max:int, irradiance_step_size:int, min_voltage:float=5, min_current_stepsize:float=0.025):
+        #values related to the one diode model
+        self.cell_p = cell_p
+        self.cell_s = cell_s
+        self.I_s = I_s
+        self.m = m
+        self.U_T = U_T
+        self.c_0 = c_0
+        self.steps_solar = steps
+        #dictionary containing the value pairs
+        self.iv_library: dict[int, IVCase] = {}
+        #irradiance list, determines the values size and stepsize of available irradiances
+        self.irradiance_list = list(range(irradiance_min, irradiance_max + 1, irradiance_step_size))
+        for irradiance in self.irradiance_list:
+            voltages, currents = solarIV(self.cell_p, self.cell_s, self.I_s, self.m, self.U_T, self.c_0, float(irradiance), self.steps_solar)
+            voltages, currents = min_remover(voltages, currents, min_voltage)
+            voltages, currents = stepsize_reducer(list(voltages), list(currents), min_current_stepsize, 'right')
+            self.iv_library[irradiance] = IVCase(
+                irradiance=irradiance,
+                U=np.asarray(voltages),
+                I=np.asarray(currents)
+            )
+    def return_for_irradiance(self, irradiance:int=1000):
+        """
+        Searches the dictionary for a matching array of voltages and a matching array of currents.
+        """
+        case = self.iv_library[irradiance]
+        voltages = case.U
+        currents = case.I
+        return voltages, currents
+
+    def data_as_array(self):
+        """
+        Prepare the data contained within the dictionary to be displayed as a 3D Plot.
+        """
+        if self.all_U_values_identical:
+            continue
+        else:
+            raise Exception("Error! The voltage arrays aren't all the same size and cannot be prepared to be plotted!")
+        Gs = np.array(sorted(self.iv_library.keys()), dtype=np.float32)
+
+        first_case = self.iv_library[int(Gs[0])]
+        U_common = first_case.U.astype(np.float32)
+
+        nG = len(Gs)
+        nU = U_common.size
+
+        out = np.empty((nG, nU, 3), dtype=np.float32)
+
+        out[:, :, 0] = Gs[:, None]          # G broadcast to (nG, nU)
+        out[:, :, 1] = U_common[None, :]   # U broadcast to (nG, nU)
+
+        for gi, G in enumerate(Gs):
+            case = self.iv_library[int(G)]
+            out[gi, :, 2] = case.I.astype(np.float32)
+
+        return out
+    def all_U_values_identical(self) -> bool:
+        """
+
+        """
+        it = iter(self.irradiance_list)
+        try:
+            first_key = next(it)
+        except StopIteration:
+            return True  # no irradiance cases
+
+        ref_U = self.iv_library[first_key].U
+        for G in it:
+            U = self.iv_library[G].U
+            if len(U) != len(ref_U):
+                return False
+            # use allclose to be robust to tiny float differences
+            if not np.allclose(U, ref_U, rtol=1e-7, atol=1e-12):
+                return False
+        return True
+
 
 @dataclass
 class VCP:
