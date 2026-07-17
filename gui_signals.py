@@ -267,7 +267,6 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_power.setText(str(self.power))
     def apply_diode_model(self):
         U_1, I_1 = curveutils.solarIV(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0, 1000, 10000)
-        print(self.c_0)
         #prepare data before running the controll algorithm, removes too low 
         U_1, I_1 = curveutils.min_remover(U_1, I_1, 5)
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
