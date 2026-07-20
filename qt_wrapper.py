@@ -109,7 +109,7 @@ class scheduling():
         ip_address(str): IP Adress to connect the supply to.
         port(int): port to connect the supply to.
         """
-        self._print_jobs()
+        #self._print_jobs()
         self.scheduler.add_periodic(
             "connect",
             period_s=0,
@@ -170,7 +170,7 @@ class scheduling():
                 start_immediately=True,
                 semaphores=[self.psu_com]
             )
-        self._print_jobs()
+        #self._print_jobs()
     def measure(self):
         """
         Sets only the job that measures and updates the UI
@@ -213,7 +213,7 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com]
         )
-        self._print_jobs()
+        #self._print_jobs()
     def measure_set_diode_model(self):
         """
         Removes the measure_set job, the measure job and the set_values job and starts a new measure_set job with udpated values.
@@ -225,7 +225,7 @@ class scheduling():
 
         self.scheduler.add_periodic(
             'measure_set',
-            period_s=0.01,
+            period_s=0.05,
             func=self.measure_signal.measure_emit_set,
             args=(),
             kwargs={},

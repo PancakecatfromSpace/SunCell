@@ -83,13 +83,15 @@ class MainDialog(QtWidgets.QDialog):
         self.m_standard =  4.0
         self.u_t_standard = 25.7e-3
         self.c_0_standard = 3e-3
-        #text input fields for diode model related parameters
+        self.irradiance_standard = 1000
         self.cell_p = self.cell_p_standard
         self.cell_s = self.cell_s_standard
         self.i_s = self.i_s_standard
         self.m =  self.m_standard
         self.u_t = self.u_t_standard
         self.c_0 = self.c_0_standard
+        self.irradiance = self.irradiance_standard
+        #text input fields for diode model related parameters
         self.ui.cells_parralel_input_field.textChanged.connect(self.handle_diode_model_fields)
         self.ui.cells_parralel_input_field.setText(str(self.cell_p))
         self.ui.cells_series_input_field.textChanged.connect(self.handle_diode_model_fields)
@@ -102,6 +104,8 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.thermalvoltage_input_field.setText(str(self.u_t*1000))
         self.ui.photo_current_coefficient_input_field.textChanged.connect(self.handle_diode_model_fields)
         self.ui.photo_current_coefficient_input_field.setText(str(self.c_0*1000))
+        self.ui.irradiance_input_field.textChanged.connect(self.handle_irradiance_field)
+        self.ui.irradiance_input_field.setText(str(self.irradiance))
         # dials
         #set max values to dials
         self.ui.voltage_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT)
@@ -130,6 +134,15 @@ class MainDialog(QtWidgets.QDialog):
 
         self.ui.photo_current_coefficient_input_slider.setValue(int(self.c_0*100e3))
         self.ui.photo_current_coefficient_input_slider.valueChanged.connect(self.handle_diode_model_sliders)
+
+        
+        self.ui.irradiance_dial.setValue(int(self.irradiance))
+        self.ui.irradiance_dial.valueChanged.connect(self.handle_irradiance_dial)
+        #initialize the whole_day function as an attribute
+        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        #initialize setter for one voltage and currents array so that setter can be initalized once and receive new values later
+        U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
     def on_measurement(self, voltage, current, power):
         """
         Handles the update of the LCD Displays at the top of the screen.
@@ -210,7 +223,7 @@ class MainDialog(QtWidgets.QDialog):
     def handle_diode_model_fields(self, update:bool=True):
         """
         Handles the diode model input fields. Can be run as an update or not. If run as an update the values displayed will be updated while ignoring 
-        currently set values.
+        currently set values within the input text field.
         """
         if update:
             try:
@@ -220,6 +233,9 @@ class MainDialog(QtWidgets.QDialog):
                 self.m =  float(self.ui.diodefactor_input_field.text())
                 self.u_t = float(self.ui.thermalvoltage_input_field.text()) / 1e3
                 self.c_0 = float(self.ui.photo_current_coefficient_input_field.text()) / 1e3
+                self.irradiance = int(float(self.ui.irradiance_input_field.text()))
+
+                #self.irradiance = int(self.ui.irradiance_input_field.text())
             except:
                 self.cell_p = self.cell_p_standard
                 self.cell_s = self.cell_s_standard
@@ -228,12 +244,16 @@ class MainDialog(QtWidgets.QDialog):
                 self.u_t = self.u_t_standard
                 self.c_0 = self.c_0_standard
 
+                #self.irradiance = self.irradiance_standard
+
         self.ui.cells_parralel_input_slider.setValue(self.cell_p)
         self.ui.cells_series_input_slider.setValue(self.cell_s)
         self.ui.saturation_current_input_slider.setValue(int(self.i_s*100e3))
         self.ui.diodefactor_input_slider.setValue(int(self.m*10))
         self.ui.thermalvoltage_input_slider.setValue(int(self.u_t*10e3))
         self.ui.photo_current_coefficient_input_slider.setValue(int(self.c_0*100e3))
+
+        self.ui.irradiance_dial.setValue(int(self.irradiance) / 10) 
     def handle_diode_model_sliders(self, update:bool=True):
         """
         Handles the diode model sliders. Can be run to read the input and update the values or it can be run so that the values won't be changed and instead 
@@ -245,6 +265,9 @@ class MainDialog(QtWidgets.QDialog):
             self.i_s = float(self.ui.saturation_current_input_slider.value()) / 1e5
             self.m = float(self.ui.diodefactor_input_slider.value()) / 10
             self.u_t = float(self.ui.thermalvoltage_input_slider.value()) / 1e4
+            self.c_0 = float(self.ui.photo_current_coefficient_input_slider.value()) / 1e5
+
+            self.irradiance = int(self.ui.irradiance_dial.value()) * 10
         #cells parallel
         self.ui.cells_parralel_input_field.setText(str(self.cell_p))
         #cells series
@@ -256,8 +279,10 @@ class MainDialog(QtWidgets.QDialog):
         #thermalvoltage
         self.ui.thermalvoltage_input_field.setText(str(self.u_t*1e4))
         #photo current coefficient
-        self.c_0 = float(self.ui.photo_current_coefficient_input_slider.value()) / 1e5
         self.ui.photo_current_coefficient_input_field.setText(str(self.c_0*100e3))
+
+        #irradiance
+        self.ui.irradiance_input_field.setText(str(self.irradiance))
         #print("The raw unformatted input of the field is:", self.ui.cells_parralel_input_slider.value())
     @Slot()
     def apply_manual(self):
@@ -285,10 +310,11 @@ class MainDialog(QtWidgets.QDialog):
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
         """
         self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
-        U_1, I_1 = self.whole_day.return_for_irradiance()
-        self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
+        print("The irradiance is:", int(self.irradiance))
+        U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
         self.scheduling.measure_set_diode_model()
-        print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
+        #print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
     def reset_diode_model(self):
         """
         Handles the reset button on the Diode Model tab.
@@ -300,8 +326,10 @@ class MainDialog(QtWidgets.QDialog):
         self.m = self.m_standard
         self.u_t = self.u_t_standard
         self.c_0 = self.c_0_standard
+        self.irradiance = self.irradiance_standard
 
         # Block signals from all diode-model inputs/sliders while resetting
+        
         blockers = [
             QSignalBlocker(self.ui.cells_parralel_input_field),
             QSignalBlocker(self.ui.cells_series_input_field),
@@ -309,6 +337,7 @@ class MainDialog(QtWidgets.QDialog):
             QSignalBlocker(self.ui.diodefactor_input_field),
             QSignalBlocker(self.ui.thermalvoltage_input_field),
             QSignalBlocker(self.ui.photo_current_coefficient_input_field),
+            QSignalBlocker(self.ui.irradiance_input_field),
 
             QSignalBlocker(self.ui.cells_parralel_input_slider),
             QSignalBlocker(self.ui.cells_series_input_slider),
@@ -316,6 +345,7 @@ class MainDialog(QtWidgets.QDialog):
             QSignalBlocker(self.ui.diodefactor_input_slider),
             QSignalBlocker(self.ui.thermalvoltage_input_slider),
             QSignalBlocker(self.ui.photo_current_coefficient_input_slider),
+            QSignalBlocker(self.ui.irradiance_dial),
         ]
         # (Keep references alive until end of function)
 
@@ -333,6 +363,10 @@ class MainDialog(QtWidgets.QDialog):
         #U_1, I_1 = self.whole_day.return_for_irradiance(self.irradiance)
         #self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
         #self.scheduling.measure_set_diode_model()
+
+        print("The irradiance is:", int(self.irradiance))
+        U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
     def handle_irradiance_field(self):
         self.handle_diode_model_fields()
         #self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
@@ -354,4 +388,4 @@ class MainDialog(QtWidgets.QDialog):
         except:
             print("Turning the supply off properly after closing the Window failed.")
 # defines scheduler so it can be accessed at the relevant locations
-scheduling = qt_wrapper.scheduling(supply, set_supply)
+scheduling = qt_wrapper.scheduling(supply, set_supply, 5)

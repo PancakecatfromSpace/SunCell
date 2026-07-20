@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1PKYknk.ui'
+## Form generated from reading UI file 'supply_UI_1sdoYhD.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -425,6 +425,8 @@ class Ui_Dialog(object):
 
         self.irradiance_dial = QDial(self.curve_control)
         self.irradiance_dial.setObjectName(u"irradiance_dial")
+        self.irradiance_dial.setMaximum(100)
+        self.irradiance_dial.setSingleStep(1)
         self.irradiance_dial.setInvertedAppearance(False)
         self.irradiance_dial.setInvertedControls(False)
         self.irradiance_dial.setNotchesVisible(True)
@@ -486,7 +488,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(2)
+        self.option_tabs.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -528,7 +530,7 @@ class Ui_Dialog(object):
         self.apply_3d_preview_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.ui_curve), QCoreApplication.translate("Dialog", u"Diode Model", None))
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
-        self.irradiance_input_field.setInputMask(QCoreApplication.translate("Dialog", u"000.0", None))
+        self.irradiance_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.curve_on_off.setText(QCoreApplication.translate("Dialog", u"On", None))
         self.import_button.setText(QCoreApplication.translate("Dialog", u"Import", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.curve_control), QCoreApplication.translate("Dialog", u"Curve control", None))
