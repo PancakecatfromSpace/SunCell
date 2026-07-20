@@ -117,6 +117,8 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com],
         )
+        #make sure the supply starts turned off
+        self.on_off(False)
     def on_off(self, on:bool):
         turn_on = ("OP1 1")
         turn_off = ("OP1 0")
