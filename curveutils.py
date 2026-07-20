@@ -59,7 +59,7 @@ class whole_day_dict():
         Prepare the data contained within the dictionary to be displayed as a 3D Plot.
         """
         if self.all_U_values_identical:
-            continue
+            pass
         else:
             raise Exception("Error! The voltage arrays aren't all the same size and cannot be prepared to be plotted!")
         Gs = np.array(sorted(self.iv_library.keys()), dtype=np.float32)

@@ -7,6 +7,7 @@ from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker
 from PySide6 import QtWidgets
 import gui, curveutils, qt_scheduler, qt_wrapper
 import power_supply_drivers.wrapper as coms
+import time
 
 #placed this here temporarily, should be able to be removed later when the connect feature has been added to the GUI
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA")
@@ -38,7 +39,7 @@ class MainDialog(QtWidgets.QDialog):
 
         # make sure to start on the connection index
         self.ui.option_tabs.setCurrentIndex(0)
-
+        # disable all non connection related tabs
         for i in range(self.ui.option_tabs.count()):
             self.ui.option_tabs.setTabEnabled(i, i == 0)
 
@@ -62,8 +63,10 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.reset_diode_modell.clicked.connect(self.reset_diode_model)
         # Text input fields
         #text input fields for IP and Port
-        self.ip_address = None
-        self.port = None
+        self.ip_address = self.scheduling.supply.socketvalues.SUPPLY_IP
+        self.ui.ip_address_field.setText(self.ip_address)
+        self.port = self.scheduling.supply.socketvalues.SUPPLY_PORT
+        self.ui.port_field.setText(str(self.port))
         self.ui.ip_address_field.textChanged.connect(self.handle_ip_port_input)
         self.ui.port_field.textChanged.connect(self.handle_ip_port_input)
         #text input fields for voltage, current and power
@@ -192,11 +195,18 @@ class MainDialog(QtWidgets.QDialog):
         self.voltage = float(self.ui.input_field_voltage.text())
         self.current = float(self.ui.input_field_current.text())
         self.power = float(self.ui.input_field_power.text())
+
+        self.ui.voltage_dial.setValue(int(self.voltage))
+        self.ui.current_dial.setValue(int(self.current))
+        self.ui.power_dial.setValue(int(self.power))
     def handle_voltage_current_power_dial(self):
         self.voltage = float(self.ui.voltage_dial.value())
         self.current = float(self.ui.current_dial.value())
         self.power = float(self.ui.power_dial.value())
-        return
+
+        self.ui.input_field_voltage.setText(str(self.voltage))
+        self.ui.input_field_current.setText(str(self.current))
+        self.ui.input_field_power.setText(str(self.power))
     def handle_diode_model_fields(self, update:bool=True):
         """
         Handles the diode model input fields. Can be run as an update or not. If run as an update the values displayed will be updated while ignoring 
@@ -258,6 +268,7 @@ class MainDialog(QtWidgets.QDialog):
         #send out manual values
         scheduling.measure_signal.set_values_manual(self.voltage, self.current, self.power)
         #set the dials to the values put into the text fields
+        """
         self.ui.voltage_dial.setValue(int(self.voltage))
         self.ui.current_dial.setValue(int(self.current))
         self.ui.power_dial.setValue(int(self.power))
@@ -265,6 +276,7 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_voltage.setText(str(self.voltage))
         self.ui.input_field_current.setText(str(self.current))
         self.ui.input_field_power.setText(str(self.power))
+        """
     def apply_diode_model(self):
         """
         U_1, I_1 = curveutils.solarIV(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0, 1000, 10000)
@@ -315,6 +327,31 @@ class MainDialog(QtWidgets.QDialog):
             # Unblock happens automatically when blockers go out of scope,
             # but the `finally` ensures cleanup even if something errors.
             pass
-
+    def handle_irradiance_dial(self):
+        self.handle_diode_model_sliders()
+        #self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        #U_1, I_1 = self.whole_day.return_for_irradiance(self.irradiance)
+        #self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
+        #self.scheduling.measure_set_diode_model()
+    def handle_irradiance_field(self):
+        self.handle_diode_model_fields()
+        #self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        #U_1, I_1 = self.whole_day.return_for_irradiance(self.irradiance)
+        
+        #self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
+        #self.scheduling.measure_set_diode_model()
+    def closeEvent(self, event):
+        print("Closing Window...")
+        #stop the scheduler, this ensures no other job still running in the background can influence the shutdown process
+        self.scheduling.scheduler.stop()
+        #this is a bit of a dirty hack due to the scheduler lacking the capability to process interrupts. Basically wait after stopping to make sure there's nothing in the pipeline
+        time.sleep(0.5)
+        turn_on = ("OP1 1")
+        turn_off = ("OP1 0")
+        try:
+            self.scheduling.supply.sendOnly(turn_off)
+            self.scheduling.supply.setValues(0,0,0)
+        except:
+            print("Turning the supply off properly after closing the Window failed.")
 # defines scheduler so it can be accessed at the relevant locations
 scheduling = qt_wrapper.scheduling(supply, set_supply)

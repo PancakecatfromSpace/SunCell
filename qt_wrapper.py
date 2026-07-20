@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 from PySide6 import QtWidgets
 import gui, curveutils, qt_scheduler
 import power_supply_drivers.wrapper as coms
+import time
 
 class psu_measure_signal(QObject):
     """
@@ -74,7 +75,7 @@ class ConnectBridge(QObject):
 
     @Slot()
     def connect_and_report(self, ip, port):
-        print("Attempting to connect...")
+        #print("Attempting to connect...")
         try:
             # If your supply.connect supports a timeout parameter, use it here.
             # e.g.: self.supply.connect(timeout_s=5)
@@ -88,7 +89,7 @@ class ConnectBridge(QObject):
             self.connected.emit(False, str(e) or "Connection timed out")
         except Exception as e:
             self.connected.emit(False, str(e))
-        print(self.supply.socketvalues)
+        #print(self.supply.socketvalues)
 
 class scheduling():
     """
@@ -108,6 +109,7 @@ class scheduling():
         ip_address(str): IP Adress to connect the supply to.
         port(int): port to connect the supply to.
         """
+        self._print_jobs()
         self.scheduler.add_periodic(
             "connect",
             period_s=0,
@@ -118,8 +120,31 @@ class scheduling():
             semaphores=[self.psu_com],
         )
         #make sure the supply starts turned off
-        self.on_off(False)
+        turn_off = ("OP1 0")
+        
+        self.scheduler.add_periodic(
+                "turn_off_init",
+                period_s=0.5,
+                func=self.supply.sendOnly,
+                args=(turn_off,),          # only supply is static
+                kwargs={},
+                start_immediately=True,
+                semaphores=[self.psu_com]
+            )
+        
+        self.scheduler.add_periodic(
+            "set_init",
+            period_s=0.5,
+            func=self.supply.setValues,
+            args=(0.0,0.0,0.0,),          # only supply is static
+            kwargs={},
+            start_immediately=True,
+            semaphores=[self.psu_com]
+        )
+
+
     def on_off(self, on:bool):
+        self._remove_init()
         turn_on = ("OP1 1")
         turn_off = ("OP1 0")
         psu_com = qt_scheduler.semaphore(semaphore_name="psu_com")
@@ -145,10 +170,12 @@ class scheduling():
                 start_immediately=True,
                 semaphores=[self.psu_com]
             )
+        self._print_jobs()
     def measure(self):
         """
         Sets only the job that measures and updates the UI
         """
+        self._remove_init()
         self.scheduler.remove_job("measure_set")
         self.scheduler.remove_job("set_values")
 
@@ -164,6 +191,7 @@ class scheduling():
         """
         Delete the measure_set job and start the measuring job before creating the set_values job setting the currently given values for manual control.
         """
+        self._remove_init()
         self.scheduler.remove_job("measure_set")
         
         self.scheduler.add_periodic(
@@ -185,10 +213,12 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com]
         )
+        self._print_jobs()
     def measure_set_diode_model(self):
         """
         Removes the measure_set job, the measure job and the set_values job and starts a new measure_set job with udpated values.
         """
+        self._remove_init()
         self.scheduler.remove_job("measure_set")
         self.scheduler.remove_job("measure")
         self.scheduler.remove_job("set_values")
@@ -202,3 +232,17 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com],
         )
+    def _print_jobs(self):
+        """
+        Outputs a list of currently scheduled jobs and their current values.
+        """
+        print("List of currently running jobs:")
+        for jobs in self.scheduler._jobs:
+            print(jobs.name, jobs.args)
+            #print(jobs.args)
+    def _remove_init(self):
+        """
+        Remove the jobs necessary for initialazation.
+        """
+        self.scheduler.remove_job("turn_off_init")
+        self.scheduler.remove_job("set_init")
