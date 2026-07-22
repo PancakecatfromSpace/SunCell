@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1oDrIPZ.ui'
+## Form generated from reading UI file 'supply_UI_1nHtqiB.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -162,6 +162,7 @@ class Ui_Dialog(object):
         self.power_dial = QDial(self.manuel)
         self.power_dial.setObjectName(u"power_dial")
         self.power_dial.setMinimumSize(QSize(0, 150))
+        self.power_dial.setSingleStep(10)
         self.power_dial.setWrapping(False)
         self.power_dial.setNotchesVisible(True)
 
@@ -490,7 +491,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(2)
+        self.option_tabs.setCurrentIndex(1)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -513,8 +514,8 @@ class Ui_Dialog(object):
         self.input_field_current.setText(QCoreApplication.translate("Dialog", u"0.0", None))
         self.input_field_voltage.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
         self.input_field_voltage.setText(QCoreApplication.translate("Dialog", u"0.0", None))
-        self.input_field_power.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
-        self.input_field_power.setText(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.input_field_power.setInputMask("")
+        self.input_field_power.setText("")
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.manuel), QCoreApplication.translate("Dialog", u"Manuel", None))
         self.label_parralel_cells.setText(QCoreApplication.translate("Dialog", u"cell_p (solar cells in parralel):", None))
         self.cells_parralel_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))

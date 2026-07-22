@@ -110,11 +110,14 @@ class MainDialog(QtWidgets.QDialog):
         #set max values to dials
         self.ui.voltage_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT)
         self.ui.current_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_CUR)
-        self.ui.power_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_POWER)
+        self.ui.power_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT * self.scheduling.measure_signal.supply.valuelimits.MAX_CUR)
         #connect changed dial value to something meaningful
         self.ui.voltage_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.power_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
+        #since the tti supply has no concept of maximum power the power dial has no function, it is therefore disabled
+        self.ui.power_dial.setEnabled(False)
+        self.ui.input_field_power.setEnabled(False)
         # sliders
         #sliders for diode model
         self.ui.cells_parralel_input_slider.setValue(self.cell_p)
@@ -193,6 +196,7 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.port_field.setEnabled(False)
         self.scheduling.init()
         self._set_tabs_connected(True)
+        self.ui.option_tabs.setCurrentIndex(1)
 
         self.scheduling.measure()
 
@@ -212,7 +216,7 @@ class MainDialog(QtWidgets.QDialog):
         """
         self.voltage = float(self.ui.input_field_voltage.text())
         self.current = float(self.ui.input_field_current.text())
-        self.power = float(self.ui.input_field_power.text())
+        self.power = self.voltage * self.current 
 
         self.ui.voltage_dial.setValue(int(self.voltage))
         self.ui.current_dial.setValue(int(self.current))
