@@ -3,7 +3,7 @@ This file wraps the signals for the gui.py user interface into it's own file,
 contains the wrappers for the functions to be scheduled and how they connect to the UI.
 """
 
-from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker
+from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker, Qt
 from PySide6 import QtWidgets
 import gui, curveutils, qt_scheduler, qt_wrapper
 import power_supply_drivers.wrapper as coms
@@ -289,6 +289,8 @@ class MainDialog(QtWidgets.QDialog):
         #irradiance
         self.ui.irradiance_input_field.setText(str(self.irradiance))
         #print("The raw unformatted input of the field is:", self.ui.cells_parralel_input_slider.value())
+        #reenable the apply button when a value has changed
+        self.ui.apply_3d_preview_button.setEnabled(True)
     @Slot()
     def apply_manual(self):
         """
@@ -314,11 +316,17 @@ class MainDialog(QtWidgets.QDialog):
         U_1, I_1 = curveutils.min_remover(U_1, I_1, 5)
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
         """
+        self.ui.apply_3d_preview_button.setEnabled(False)
         self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
-        print("The irradiance is:", int(self.irradiance))
+        #print("The irradiance is:", int(self.irradiance))
+        #self.ui.apply_3d_preview_button.setEnabled(True)
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
-        self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
-        self.scheduling.measure_set_diode_model()
+        try:
+            self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
+            self.scheduling.measure_set_diode_model()
+        except:
+            print("Applying the new Diode model Failed. Current array:", I_1)
+            print("Retaining previous values.")
         #print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
     def reset_diode_model(self):
         """
