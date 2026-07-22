@@ -401,6 +401,13 @@ def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, posit
     voltages: Voltage to the left of the selected point
     position: position from where the inside the array the function must continue
     """
+    #check if the position is out of bounds for the current array and set to the maximum if so
+    #this midigates a bug caused by changing the current voltage pairs within the UI
+    #it can happen that the new array pairs have a smaller size than the previous one
+    #leading to a situation where the index is out of bounds 
+    if position > (I_1.size - 1):
+        print("Out of bounce detected. Resetting position to last value of current array.")
+        position = I_1.size - 1
     match currents_monotony:
         case "increasing":
             raise Exception("Error! I didn't bother to implement this one.")
