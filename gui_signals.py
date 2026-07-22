@@ -5,9 +5,12 @@ contains the wrappers for the functions to be scheduled and how they connect to 
 
 from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker, Qt
 from PySide6 import QtWidgets
+from PySide6.QtGui import QVector3D
 import gui, curveutils, qt_scheduler, qt_wrapper
 import power_supply_drivers.wrapper as coms
 import time
+import pyqtgraph.opengl as gl
+import pyqtgraph as pg
 
 #placed this here temporarily, should be able to be removed later when the connect feature has been added to the GUI
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA")
@@ -146,6 +149,11 @@ class MainDialog(QtWidgets.QDialog):
         #initialize setter for one voltage and currents array so that setter can be initalized once and receive new values later
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
         self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
+        self.values_3d_plot = self.whole_day.data_as_array()
+        #add the 3D plot on the Diode Model page
+        self.setup_3d_plot()
+
+
     def on_measurement(self, voltage, current, power):
         """
         Handles the update of the LCD Displays at the top of the screen.
@@ -332,6 +340,7 @@ class MainDialog(QtWidgets.QDialog):
             print("Applying the new Diode model Failed. Current array:", I_1)
             print("Retaining previous values.")
         #print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
+        #print("Let's see what we got here:",self.whole_day.data_as_array())
     def reset_diode_model(self):
         """
         Handles the reset button on the Diode Model tab.
@@ -411,4 +420,77 @@ class MainDialog(QtWidgets.QDialog):
         msg.setText(error_text or "Could not connect to the supply.")
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.open()
+
+    def setup_3d_plot(self):
+        """
+        initalizes the 3D plot with a set of initial values
+        """
+        #overwrite 3D plot placeholder
+        container = self.ui.plot_3d_preview  # this is the Designer placeholder
+        #set layout of the new widget
+        layout = QtWidgets.QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        #create the opengl plot and add a reasonable camera position
+        self.gl_view = gl.GLViewWidget()
+        #set black background
+        self.gl_view.setBackgroundColor((80, 140, 210, 255))
+        self.gl_view.opts['distance'] = 10
+        #add plot widget to layout
+        layout.addWidget(self.gl_view)
+        #setup grid
+        self.grid = gl.GLGridItem()
+        self.grid.setSize(x=1, y=1, z=1)
+        self.grid.setSpacing(x=1, y=1, z=1)
+        self.grid.setColor((0.6, 0.6, 0.6, 0.2))
+        self.grid.setGLOptions('translucent')
+        self.gl_view.addItem(self.grid)
+        out = self.values_3d_plot        # shape (nG, nU, 3)
+        E_grid = out[:, :, 0] * 0.1
+        U_grid = out[:, :, 1]
+        I_grid = out[:, :, 2]
+        #convert grid varaibles to fit shape expected by GLSurfacePlotItem
+        E_vals = E_grid[:, 0]             # length nG
+        U_vals = U_grid[0, :]  
+        #scale down E_vals so the graph will look right
+        #E_vals = E_vals * 0.25
+        #set the grid as part of the GLSurfacePlot
+        self.surface = gl.GLSurfacePlotItem(
+            x=E_vals,
+            y=U_vals,
+            z=I_grid,
+            shader='shaded',
+            computeNormals=True,
+            smooth=True
+        )
+        self.surface.setGLOptions('opaque')  # or 'translucent'
+        self.gl_view.addItem(self.surface)
+        #set max values
+        E_min, E_max = float(E_grid.min()), float(E_grid.max())
+        U_min, U_max = float(U_grid.min()), float(U_grid.max())
+        I_min, I_max = float(I_grid.min()), float(I_grid.max())
+        #determine center of plot
+        center = QVector3D((E_min + E_max)/2, (U_min + U_max)/2, (I_min + I_max)/2)
+
+        # Place camera diagonally above the surface
+        self.gl_view.setCameraPosition(
+            pos=QVector3D(E_max, U_max, I_max * 2.0),
+            elevation=30,
+            azimuth=-45
+        )
+        self._add_axis_labels(E_min, E_max, U_min, U_max, I_min, I_max)
+        layout.addWidget(self.gl_view)
+
+    def _add_axis_labels(self, E_min, E_max, U_min, U_max, I_min, I_max):
+        # pyqtgraph GLTextItem uses 3D coordinates.
+        # Note: you may need to tweak positions depending on your data ranges.
+        def add_text(pos, text, color=(255, 255, 255, 1), size=12):
+            t = gl.GLTextItem(pos=pos, text=text, color=color, font=pg.QtGui.QFont("Arial", size))
+            #t.scale(0.1,0.1,0.1)  # adjust if text is too big/small
+            self.gl_view.addItem(t)
+
+        # Roughly place labels near the “max” corners
+        add_text((E_max, U_min, I_min), "E",color=(0,255,0), size=16)
+        add_text((E_min, U_max, I_min), "U", color=(0,0,255),size=16)
+        add_text((E_min, U_min, I_max), "I",color=(255,0,0), size=16)
+
 scheduling = qt_wrapper.scheduling(supply, set_supply, 5)
