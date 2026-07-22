@@ -12,7 +12,7 @@ sched = gui_signals.scheduling.scheduler
 
 app = QApplication([])
 gui_window = gui_signals.MainDialog(gui_signals.scheduling)
-gui_window.scheduling.job_printer()
+#gui_window.scheduling.job_printer()
 gui_window.show()
 
 sched.start_all()
