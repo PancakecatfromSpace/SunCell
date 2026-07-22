@@ -184,9 +184,14 @@ class MainDialog(QtWidgets.QDialog):
         the other tabs within the UI. 
         """
         if not ok:
+            print("Error! Connection Failed.")
             self._set_tabs_connected(False)
+            self.show_connection_failed_dialog()
             return
-
+        self.ui.connect_button.setEnabled(False)
+        self.ui.ip_address_field.setEnabled(False)
+        self.ui.port_field.setEnabled(False)
+        self.scheduling.init()
         self._set_tabs_connected(True)
 
         self.scheduling.measure()
@@ -387,5 +392,11 @@ class MainDialog(QtWidgets.QDialog):
             self.scheduling.supply.setValues(0,0,0)
         except:
             print("Turning the supply off properly after closing the Window failed.")
-# defines scheduler so it can be accessed at the relevant locations
+    def show_connection_failed_dialog(self, error_text=None):
+        msg = QtWidgets.QMessageBox(self)
+        msg.setIcon(QtWidgets.QMessageBox.Critical)
+        msg.setWindowTitle("Connection failed")
+        msg.setText(error_text or "Could not connect to the supply.")
+        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg.open()
 scheduling = qt_wrapper.scheduling(supply, set_supply, 5)
