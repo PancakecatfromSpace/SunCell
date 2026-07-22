@@ -70,9 +70,9 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.ip_address_field.textChanged.connect(self.handle_ip_port_input)
         self.ui.port_field.textChanged.connect(self.handle_ip_port_input)
         #text input fields for voltage, current and power
-        self.voltage = None
-        self.current = None
-        self.power = None
+        self.voltage = 0.0
+        self.current = 0.0
+        self.power = 0.0
         self.ui.input_field_voltage.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_current.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
