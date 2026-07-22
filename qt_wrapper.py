@@ -37,8 +37,11 @@ class psu_measure_signal(QObject):
         Takes the measured values stored within the supply object and uses them to determine the next value to set for the power supply 
         before sending the results to the supply.
         """
-        self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current))
-        return
+        try:
+            self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
+        except:
+            print("Setting Failed! Used current Array:", self.setter._currents)
+            raise ValueError
     def measure_emit_set(self):
         """
         Measures the values from the supply, emits the signal to the UI to update the Display 
@@ -119,6 +122,11 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com],
         )
+
+    def init(self):
+        """
+        Initialize the Power supply after successful connection.
+        """
         #make sure the supply starts turned off
         turn_off = ("OP1 0")
         
@@ -175,7 +183,7 @@ class scheduling():
         """
         Sets only the job that measures and updates the UI
         """
-        self._remove_init()
+        #self._remove_init()
         self.scheduler.remove_job("measure_set")
         self.scheduler.remove_job("set_values")
 

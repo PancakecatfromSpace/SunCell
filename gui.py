@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1sdoYhD.ui'
+## Form generated from reading UI file 'supply_UI_1oDrIPZ.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -227,6 +227,7 @@ class Ui_Dialog(object):
         self.cells_parralel_input_slider.setMinimumSize(QSize(250, 0))
         self.cells_parralel_input_slider.setMouseTracking(True)
         self.cells_parralel_input_slider.setTabletTracking(True)
+        self.cells_parralel_input_slider.setMinimum(1)
         self.cells_parralel_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_cells_parralel.addWidget(self.cells_parralel_input_slider)
@@ -251,6 +252,7 @@ class Ui_Dialog(object):
         self.cells_series_input_slider = QSlider(self.ui_curve)
         self.cells_series_input_slider.setObjectName(u"cells_series_input_slider")
         self.cells_series_input_slider.setMinimumSize(QSize(250, 0))
+        self.cells_series_input_slider.setMinimum(1)
         self.cells_series_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_cells_series.addWidget(self.cells_series_input_slider)
@@ -488,7 +490,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(3)
+        self.option_tabs.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(Dialog)
