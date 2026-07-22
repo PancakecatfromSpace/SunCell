@@ -232,6 +232,13 @@ class scheduling():
             start_immediately=True,
             semaphores=[self.psu_com],
         )
+    def job_printer(self):
+        self.scheduler.add_periodic(
+            'print',
+            period_s=5,
+            func=self._print_jobs,
+            start_immediately=True            
+        )
     def _print_jobs(self):
         """
         Outputs a list of currently scheduled jobs and their current values.
