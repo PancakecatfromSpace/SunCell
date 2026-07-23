@@ -82,7 +82,7 @@ class whole_day_dict():
         return out
     def all_U_values_identical(self) -> bool:
         """
-
+        Checks if all U and I values are identical
         """
         it = iter(self.irradiance_list)
         try:
