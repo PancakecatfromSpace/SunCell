@@ -451,7 +451,7 @@ class MainDialog(QtWidgets.QDialog):
         #self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
         #self.scheduling.measure_set_diode_model()
 
-        print("The irradiance is:", int(self.irradiance))
+        #print("The irradiance is:", int(self.irradiance))
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
         self.iv_plot.update_curve(U_1, I_1)
         #self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, 0.0,0.0)
