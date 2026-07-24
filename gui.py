@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1RAOeYB.ui'
+## Form generated from reading UI file 'supply_UI_1lpfHXJ.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -24,7 +24,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
-        Dialog.resize(908, 758)
+        Dialog.resize(908, 536)
         self.gridLayout = QGridLayout(Dialog)
         self.gridLayout.setObjectName(u"gridLayout")
         self.labels = QHBoxLayout()
@@ -473,7 +473,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(3)
+        self.option_tabs.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(Dialog)
