@@ -37,11 +37,13 @@ class psu_measure_signal(QObject):
         Takes the measured values stored within the supply object and uses them to determine the next value to set for the power supply 
         before sending the results to the supply.
         """
-        try:
-            self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
-        except:
-            print("Setting Failed! Used current Array:", self.setter._currents)
-            raise ValueError
+        self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
+        #try:
+            #self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
+        #except:
+            #print("Setting Failed! Used current Array:", self.setter._currents)
+            #print("Setting Failed!")
+            #raise ValueError
     def measure_emit_set(self):
         """
         Measures the values from the supply, emits the signal to the UI to update the Display 

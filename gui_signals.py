@@ -401,6 +401,8 @@ class MainDialog(QtWidgets.QDialog):
         #print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
         #print("Let's see what we got here:",self.whole_day.data_as_array())
         self.values_3d_plot = self.whole_day.data_as_array()
+        self.iv_plot.update_curve(U_1, I_1)
+        self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, 0.0,0.0)
         self.refresh_3d_surface()
     def reset_diode_model(self):
         """

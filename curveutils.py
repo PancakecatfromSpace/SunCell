@@ -404,27 +404,38 @@ def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, posit
     #check if the position is out of bounds for the current array and set to the maximum if so
     #this midigates a bug caused by changing the current voltage pairs within the UI
     #it can happen that the new array pairs have a smaller size than the previous one
-    #leading to a situation where the index is out of bounds 
-    if position > (I_1.size - 1):
-        print("Out of bounce detected. Resetting position to last value of current array.")
-        position = I_1.size - 1
+    #leading to a situation where the index is out of bounds
+    def out_of_bounce(position):
+        if position > (I_1.size - 1):
+            print("Out of bounce detected. Resetting position to last value of current array.")
+            position = I_1.size - 1
+        if position < 0:
+            print("Out of bounce detected. Setting Position to Zero.")
+            position = 0
+        return position
     match currents_monotony:
         case "increasing":
             raise Exception("Error! I didn't bother to implement this one.")
         case "decreasing":
+            """
+            
             if IM > I_1[0]:
-                position = 0 # mark the left most position to be the current position
-                volt = U_1[1]/4
-            # logic that checks if the current is lower than the lower right border 
-            elif IM < I_1[-1]:
-                position = U_1.size - 1 # mark the right most position to be the right most border
-                volt = U_1[-1]
-            # check if its within range and neither all the way to the right nor all the way to the left
-            if IM < I_1[position] and not position == U_1.size - 1:
-                position = position + 1
+                position = position + 1 # mark the left most position to be the current position
                 volt = U_1[position]
-            if IM > I_1[position] and not position == 0:
+            
+            # logic that checks if the current is lower than the lower right border 
+            if IM < I_1[-1]:
+                position = U_1.size - 1 # mark the right most position to be the right most border
+                volt = U_1[position]
+            """
+            # check if its within range and neither all the way to the right nor all the way to the left
+            if IM < I_1[position]:
+                position = position + 1
+                position = out_of_bounce(position)
+                volt = U_1[position]
+            if IM > I_1[position]:
                 position = position - 1
+                position = out_of_bounce(position)
                 volt = U_1[position]
         case _:
             raise ValueError(f"Error! Currents Monotony set to invalid value:{self._currents_monotony}")
