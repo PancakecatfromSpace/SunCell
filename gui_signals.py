@@ -3,7 +3,7 @@ This file wraps the signals for the gui.py user interface into it's own file,
 contains the wrappers for the functions to be scheduled and how they connect to the UI.
 """
 
-from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker, Qt
+from PySide6.QtCore import QObject, Signal, Slot, QSignalBlocker, Qt, QEvent
 from PySide6 import QtWidgets
 from PySide6.QtGui import QVector3D
 import gui, curveutils, qt_scheduler, qt_wrapper
@@ -11,6 +11,7 @@ import power_supply_drivers.wrapper as coms
 import time
 import pyqtgraph.opengl as gl
 import pyqtgraph as pg
+import numpy as np
 
 #placed this here temporarily, should be able to be removed later when the connect feature has been added to the GUI
 supply = coms.SupplyCommunication("10.30.0.110", lookup = "tti", port = 9221, type="VISA")
@@ -151,8 +152,62 @@ class MainDialog(QtWidgets.QDialog):
         self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
         self.values_3d_plot = self.whole_day.data_as_array()
         #add the 3D plot on the Diode Model page
-        self.setup_3d_plot()
+        self.setup_3d_plot(self.ui.placeholder_3d_view)
+        #self.setup_3d_plot(self.ui.placeholder_3d_view)
+        self.iv_plot = IVCurvePlot(dash_every=10, parent=self)
 
+        self.embed_plot_fixed_to_placeholder(self.ui.placeholder_2d_view, self.iv_plot)
+
+        self.iv_plot.update_curve(U_1, I_1)
+        self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, 0.0,0.0)
+    
+    def embed_plot_fixed_to_placeholder(self, placeholder: QtWidgets.QWidget, plot: QtWidgets.QWidget):
+        # Ensure we start with a clean layout situation
+        old_layout = placeholder.layout()
+        if old_layout is not None:
+            # zero margins/spacing no matter what it is
+            if hasattr(old_layout, "setContentsMargins"):
+                old_layout.setContentsMargins(0, 0, 0, 0)
+            if hasattr(old_layout, "setSpacing"):
+                old_layout.setSpacing(0)
+            # clear existing items
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                w = item.widget()
+                if w is not None:
+                    w.setParent(None)
+
+        # If there was no layout in Designer, create one
+        if placeholder.layout() is None:
+            layout = QtWidgets.QGridLayout(placeholder)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setSpacing(0)
+            placeholder.setLayout(layout)
+        else:
+            layout = placeholder.layout()
+
+        # Force the plot widget to be EXACTLY placeholder-sized
+        plot.setParent(placeholder)
+
+        plot.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+        plot.setMinimumSize(placeholder.size())
+        plot.setMaximumSize(placeholder.size())
+        plot.resize(placeholder.size())
+
+        # Put plot into layout cell (0,0) only
+        layout.addWidget(plot, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Keep it in sync when the dialog resizes
+        class ResizeFilter(QObject):
+            def eventFilter(self, obj, event):
+                if obj is placeholder and event.type() == QEvent.Type.Resize:
+                    s = placeholder.size()
+                    plot.setMinimumSize(s)
+                    plot.setMaximumSize(s)
+                    plot.resize(s)
+                return super().eventFilter(obj, event)
+
+        placeholder.installEventFilter(ResizeFilter(placeholder))
 
     def on_measurement(self, voltage, current, power):
         """
@@ -161,6 +216,9 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.voltage_display.display(voltage)
         self.ui.current_display.display(current)
         self.ui.power_display.display(power)
+
+        self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, voltage,current)
+
     def toggle_power_curve_control(self, checked: bool):
         # make sure that both curve_on_off and on_botton have the same status
         sender = self.sender()
@@ -211,6 +269,7 @@ class MainDialog(QtWidgets.QDialog):
     def connect_to_supply(self):
 
         scheduling.connect(self.ip_address, self.port)
+        self.set_active_irradiance(100)
         
     def handle_ip_port_input(self):
         """
@@ -341,6 +400,8 @@ class MainDialog(QtWidgets.QDialog):
             print("Retaining previous values.")
         #print("Are all U Values Identical? ",self.whole_day.all_U_values_identical())
         #print("Let's see what we got here:",self.whole_day.data_as_array())
+        self.values_3d_plot = self.whole_day.data_as_array()
+        self.refresh_3d_surface()
     def reset_diode_model(self):
         """
         Handles the reset button on the Diode Model tab.
@@ -392,7 +453,10 @@ class MainDialog(QtWidgets.QDialog):
 
         print("The irradiance is:", int(self.irradiance))
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        self.iv_plot.update_curve(U_1, I_1)
+        #self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, 0.0,0.0)
         self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
+        self.set_active_irradiance(self.irradiance/10)
     def handle_irradiance_field(self):
         self.handle_diode_model_fields()
         #self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
@@ -421,22 +485,22 @@ class MainDialog(QtWidgets.QDialog):
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.open()
 
-    def setup_3d_plot(self):
+    def setup_3d_plot(self, placeholder):
         """
         initalizes the 3D plot with a set of initial values
         """
         #overwrite 3D plot placeholder
-        container = self.ui.plot_3d_preview  # this is the Designer placeholder
+        container = placeholder # this is the Designer placeholder
         #set layout of the new widget
         layout = QtWidgets.QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         #create the opengl plot and add a reasonable camera position
-        self.gl_view = gl.GLViewWidget()
+        self.gl_view = ClampedGLViewWidget()
         #set black background
         self.gl_view.setBackgroundColor((80, 140, 210, 255))
         self.gl_view.opts['distance'] = 10
         #add plot widget to layout
-        layout.addWidget(self.gl_view)
+        #layout.addWidget(self.gl_view)
         #setup grid
         self.grid = gl.GLGridItem()
         self.grid.setSize(x=1, y=1, z=1)
@@ -444,8 +508,9 @@ class MainDialog(QtWidgets.QDialog):
         self.grid.setColor((0.6, 0.6, 0.6, 0.2))
         self.grid.setGLOptions('translucent')
         self.gl_view.addItem(self.grid)
+        #self.gl_view = gl.GLViewWidget(rotationMethod='quaternion')
         out = self.values_3d_plot        # shape (nG, nU, 3)
-        E_grid = out[:, :, 0] * 0.1
+        E_grid = out[:, :, 0]*0.1
         U_grid = out[:, :, 1]
         I_grid = out[:, :, 2]
         #convert grid varaibles to fit shape expected by GLSurfacePlotItem
@@ -454,13 +519,15 @@ class MainDialog(QtWidgets.QDialog):
         #scale down E_vals so the graph will look right
         #E_vals = E_vals * 0.25
         #set the grid as part of the GLSurfacePlot
+        #np.savetxt("out.txt", out.reshape(-1, out.shape[-1]))
+        
         self.surface = gl.GLSurfacePlotItem(
             x=E_vals,
             y=U_vals,
             z=I_grid,
-            shader='shaded',
+            shader='heightColor',
             computeNormals=True,
-            smooth=True
+            smooth=False
         )
         self.surface.setGLOptions('opaque')  # or 'translucent'
         self.gl_view.addItem(self.surface)
@@ -470,27 +537,364 @@ class MainDialog(QtWidgets.QDialog):
         I_min, I_max = float(I_grid.min()), float(I_grid.max())
         #determine center of plot
         center = QVector3D((E_min + E_max)/2, (U_min + U_max)/2, (I_min + I_max)/2)
+        # distance large enough to see the whole surface
+        extent = np.array([E_max - E_min, U_max - U_min, I_max - I_min], dtype=float)
+        radius = np.linalg.norm(extent) / 2.0
+        distance = max(radius * 3.0, 1.0)
 
-        # Place camera diagonally above the surface
+        self.gl_view.opts['center'] = center
+
+        # Start with a camera that puts +E and +U toward the lower-right,
+        # while making +I project upward.
         self.gl_view.setCameraPosition(
-            pos=QVector3D(E_max, U_max, I_max * 2.0),
-            elevation=30,
-            azimuth=-45
+            distance=distance,
+            elevation=35,   # tilt: raise/lower how much of the "up" comes from I
+            azimuth=35     # rotate around the center: left/right mapping
         )
+        # constant colour gradiant without sharp transition
+        I = I_grid  # shape (nG, nU)
+        zmin = float(I.min())
+        zmax = float(I.max())
+        r = zmax - zmin
+
+        if r > 0:
+            k_green = 0.75     # <1 keeps high values from turning fully yellow (tunes "red at max")
+            gamma_blue = 2.5  # >1 makes blue drop faster so mid values look more yellow/green
+
+            # heightColor shader uses:
+            # red   = colorMap[0] * (z + colorMap[1]) ^ colorMap[2]
+            # green = colorMap[3] * (z + colorMap[4]) ^ colorMap[5]
+            # blue  = colorMap[6] * (z + colorMap[7]) ^ colorMap[8]
+            self.surface.shader()['colorMap'] = np.array([
+                1.0/r,   -zmin,     1.0,      # red   = (z - zmin)/range
+                k_green/r, -zmin,   1.0,      # green = k * (z - zmin)/range
+                -1.0/r,  -zmax,     gamma_blue  # blue  = ((zmax - z)/range) ^ gamma_blue
+            ], dtype=np.float32)
+        else:
+            # all I values equal -> no meaningful gradient
+            pass
         self._add_axis_labels(E_min, E_max, U_min, U_max, I_min, I_max)
+        self._init_active_curve_items()
         layout.addWidget(self.gl_view)
 
-    def _add_axis_labels(self, E_min, E_max, U_min, U_max, I_min, I_max):
-        # pyqtgraph GLTextItem uses 3D coordinates.
-        # Note: you may need to tweak positions depending on your data ranges.
-        def add_text(pos, text, color=(255, 255, 255, 1), size=12):
-            t = gl.GLTextItem(pos=pos, text=text, color=color, font=pg.QtGui.QFont("Arial", size))
-            #t.scale(0.1,0.1,0.1)  # adjust if text is too big/small
-            self.gl_view.addItem(t)
+    def _add_axis_labels(self, E_min, E_max, U_min, U_max, I_min, I_max, update=False):
+        # Create storage on first use
+        if not hasattr(self, "_axis_items"):
+            self._axis_items = []
+        else:
+            if update:
+                # Remove old axis items (lines + ticks + all text)
+                for item in self._axis_items:
+                    try:
+                        self.gl_view.removeItem(item)
+                    except Exception:
+                        pass
+                self._axis_items.clear()
 
-        # Roughly place labels near the “max” corners
-        add_text((E_max, U_min, I_min), "E",color=(0,255,0), size=16)
-        add_text((E_min, U_max, I_min), "U", color=(0,0,255),size=16)
-        add_text((E_min, U_min, I_max), "I",color=(255,0,0), size=16)
+        def add_text(pos, text, color=(255, 255, 255, 1), size=12):
+            t = gl.GLTextItem(
+                pos=pos,
+                text=text,
+                color=color,
+                font=pg.QtGui.QFont("Arial", size),
+            )
+            self.gl_view.addItem(t)
+            self._axis_items.append(t)
+            return t
+
+        def add_line(p0, p1, color=(255, 255, 255, 255), width=2):
+            ln = gl.GLLinePlotItem(
+                pos=np.array([p0, p1], dtype=float),
+                color=color,
+                width=width,
+                antialias=True,
+            )
+            self.gl_view.addItem(ln)
+            self._axis_items.append(ln)
+            return ln
+
+        # Ranges (used for offsets/tick lengths)
+        dE = float(E_max - E_min)
+        dU = float(U_max - U_min)
+        dI = float(I_max - I_min)
+        maxd = max(dE, dU, dI, 1e-12)
+
+        # Origin and axis endpoints
+        O = (E_min, U_min, I_min)
+        E_end = (E_max, U_min, I_min)
+        U_end = (E_min, U_max, I_min)
+        I_end = (E_min, U_min, I_max)
+
+        # Axes lines
+        add_line(O, E_end, color=(0, 255, 0, 255), width=2)       # E axis
+        add_line(O, U_end, color=(0, 0, 255, 255), width=2)       # U axis
+        add_line(O, I_end, color=(255, 0, 0, 255), width=2)       # I axis
+
+        # Axis letters at corners (like your original)
+        add_text((E_max, U_min, I_min), "E", color=(0, 255, 0, 1), size=200)
+        add_text((E_min, U_max, I_min), "U", color=(0, 0, 255, 1), size=16)
+        add_text((E_min, U_min, I_max), "I", color=(255, 0, 0, 1), size=16)
+
+        # Tick settings: "every 10th value" -> 10 segments along the axis
+        nSegments = 10
+        tick_len = 0.015 * maxd  # how long the tick marks are
+
+        # Tick label formatting
+        def fmt(v):
+            # adjust as needed
+            return f"{v:.3g}"
+
+        # Tick labels for E (x direction)
+        for k in range(nSegments + 1):
+            t = k / nSegments
+            x = E_min + t * dE
+            # tick mark: along z a little at the bottom plane
+            add_line((x, U_min, I_min), (x, U_min, I_min + tick_len),
+                    color=(220, 220, 220, 200), width=1)
+            # label offset (slightly in +z so it doesn't sit exactly on the line)
+            add_text((x, U_min, I_min + tick_len * 1.2),
+                    fmt(x), color=(240, 240, 240, 1), size=10)
+
+        # Tick labels for U (y direction)
+        for k in range(nSegments + 1):
+            t = k / nSegments
+            y = U_min + t * dU
+            add_line((E_min, y, I_min), (E_min + tick_len, y, I_min),
+                    color=(220, 220, 220, 200), width=1)
+            add_text((E_min + tick_len * 1.2, y, I_min),
+                    fmt(y), color=(240, 240, 240, 1), size=10)
+
+        # Tick labels for I (z direction)
+        for k in range(nSegments + 1):
+            t = k / nSegments
+            z = I_min + t * dI
+            add_line((E_min, U_min, z), (E_min + tick_len, U_min, z),
+                    color=(220, 220, 220, 200), width=1)
+            add_text((E_min + tick_len * 1.2, U_min, z),
+                    fmt(z), color=(240, 240, 240, 1), size=10)
+
+
+    def _update_surface_colormap(self, I_grid):
+        zmin = float(I_grid.min())
+        zmax = float(I_grid.max())
+        r = zmax - zmin
+
+        if r <= 0:
+            return
+
+        # Same tuning knobs that made your gradient work
+        k_green = 0.75
+        gamma_blue = 2.5
+
+        # heightColor shader mapping:
+        # red   = pow(z * cm[0] + cm[1], cm[2])
+        # green = pow(z * cm[3] + cm[4], cm[5])
+        # blue  = pow(z * cm[6] + cm[7], cm[8])
+        self.surface.shader()['colorMap'] = np.array([
+            1.0/r,     -zmin,    1.0,      # red
+            k_green/r, -zmin,    1.0,      # green
+            -1.0/r,    -zmax,    gamma_blue  # blue
+        ], dtype=np.float32)
+
+
+    def refresh_3d_surface(self, update_camera=True):
+        out = self.values_3d_plot  # (nG, nU, 3)
+
+        E_grid = out[:, :, 0] * 0.1
+        U_grid = out[:, :, 1]
+        I_grid = out[:, :, 2]       # shape (nG, nU)
+
+        # GLSurfacePlotItem mapping (use the corrected orientation):
+        E_vals = E_grid[:, 0]       # (nG,)
+        U_vals = U_grid[0, :]       # (nU,)
+
+        # Update geometry (if x/y unchanged you can skip them; keeping them is fine)
+        self.surface.setData(
+            x=E_vals,
+            y=U_vals,
+            z=I_grid
+        )
+
+        # Update colormap to match new min/max of I
+        self._update_surface_colormap(I_grid)
+
+        if update_camera:
+            E_min, E_max = float(E_grid.min()), float(E_grid.max())
+            U_min, U_max = float(U_grid.min()), float(U_grid.max())
+            I_min, I_max = float(I_grid.min()), float(I_grid.max())
+
+            center = QVector3D((E_min + E_max) / 2, (U_min + U_max) / 2, (I_min + I_max) / 2)
+            self.gl_view.opts['center'] = center
+
+            extent = np.array([E_max - E_min, U_max - U_min, I_max - I_min], dtype=float)
+            radius = np.linalg.norm(extent) / 2.0
+            distance = max(radius * 3.0, 1.0)
+
+            # Keep the same orientation you liked earlier; adjust if you want
+            self.gl_view.setCameraPosition(distance=distance, elevation=35, azimuth=35)
+        self._add_axis_labels(E_min, E_max, U_min, U_max, I_min, I_max, update=True)
+        self._update_active_curve()
+
+
+    def _init_active_curve_items(self):
+        # Store selection (default)
+        if not hasattr(self, "_active_E_index"):
+            self._active_E_index = 0
+
+        # --- 3D red highlight curve ---
+        self._active_curve_3d = gl.GLLinePlotItem(
+            pos=np.zeros((2, 3), dtype=float),
+            color=(255, 0, 0, 255),
+            width=3,
+            antialias=True,
+        )
+        self.gl_view.addItem(self._active_curve_3d)
+
+        # --- 2D curve plot (pick your UI widget name) ---
+        # Change this to whatever your UI element is called.
+        self._active_curve_2d_plot = self.ui.placeholder_2d_view  # <-- rename if needed
+
+        #self._active_curve_2d_plot.showGrid(x=True, y=True)
+        #self._active_curve_2d_plot.setLabel("bottom", "U")
+        #self._active_curve_2d_plot.setLabel("left", "I")
+
+        #self._active_curve_2d_line = self._active_curve_2d_plot.plot(
+        #    pen=pg.mkPen(color=(255, 0, 0), width=2)
+        #)
+
+        # Initial draw (with whatever current data you have)
+        self._update_active_curve()
+    def set_active_irradiance(self, E_index=None, E_value=None):
+        """
+        Call this from your UI selection logic.
+        - E_index: row index in your irradiance grid
+        - E_value: pick closest E in the grid
+        """
+        out = self.values_3d_plot
+        E_grid = out[:, :, 0] * 0.1
+        U_grid = out[:, :, 1]
+        I_grid = out[:, :, 2]
+
+        nG, nU = I_grid.shape
+        E_vals = E_grid[:, 0]  # (nG,)
+
+        if E_index is None and E_value is None:
+            E_index = getattr(self, "_active_E_index", 0)
+
+        if E_index is not None:
+            self._active_E_index = int(np.clip(E_index, 0, nG - 1))
+        else:
+            self._active_E_index = int(np.argmin(np.abs(E_vals - E_value)))
+
+        self._update_active_curve()
+
+    def _update_active_curve(self):
+        out = self.values_3d_plot
+        E_grid = out[:, :, 0] * 0.1
+        U_grid = out[:, :, 1]
+        I_grid = out[:, :, 2]  # (nG, nU)
+
+        nG, nU = I_grid.shape
+        E_index = int(np.clip(getattr(self, "_active_E_index", 0), 0, nG - 1))
+
+        E_vals = E_grid[:, 0]   # (nG,)
+        U_vals = U_grid[0, :]   # (nU,)
+        I_curve = I_grid[E_index, :]  # (nU,)
+
+        E_fixed = float(E_vals[E_index])
+
+        # ---- update 3D red curve ----
+        # points: (E_fixed, U_vals[j], I_curve[j])
+        pts = np.column_stack([
+            np.full(nU, E_fixed, dtype=float),
+            U_vals.astype(float),
+            I_curve.astype(float),
+        ])
+        self._active_curve_3d.setData(pos=pts)
+
+        # ---- update 2D curve ----
+        #self._active_curve_2d_line.setData(U_vals, I_curve)
+
+
+
+class ClampedGLViewWidget(gl.GLViewWidget):
+    def mouseMoveEvent(self, ev):
+        super().mouseMoveEvent(ev)
+        # Clamp elevation to avoid pole flips/distortions (Euler mode only)
+        if self.opts.get('rotationMethod', 'euler') == 'euler':
+            self.opts['elevation'] = float(np.clip(self.opts.get('elevation', 0), -80.0, 80.0))
+
+class IVCurvePlot(pg.PlotWidget):
+    def __init__(self, dash_every=10, parent=None):
+        super().__init__(parent=parent)
+
+        self.dash_every = int(dash_every)
+
+        self.setMinimumSize(0, 0)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding,
+                           QtWidgets.QSizePolicy.Policy.Expanding)
+
+        # Correct: margins on the widget, not on self.layout (method)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self.curve = self.plot(pen=pg.mkPen(color=(40, 120, 255), width=2))
+
+        self.mppSpot = pg.ScatterPlotItem(
+            size=14,
+            pen=pg.mkPen((220, 40, 40), width=2),
+            brush=pg.mkBrush((220, 40, 40, 160))
+        )
+        self.measSpot = pg.ScatterPlotItem(
+            size=14,
+            pen=pg.mkPen((40, 180, 80), width=2),
+            brush=pg.mkBrush((40, 180, 80, 160))
+        )
+        self.addItem(self.mppSpot)
+        self.addItem(self.measSpot)
+
+        self.mppLabel = pg.TextItem("MPP", color=(220, 40, 40), anchor=(0, 1))
+        self.measLabel = pg.TextItem("Measured Value", color=(40, 180, 80), anchor=(0, 1))
+        self.addItem(self.mppLabel)
+        self.addItem(self.measLabel)
+
+        self.showGrid(x=True, y=True, alpha=0.25)
+        self.setLabel("bottom", "Voltage", units="V")
+        self.setLabel("left", "Current", units="A")
+
+        self._vmin = 0.0; self._vmax = 1.0
+        self._imin = 0.0; self._imax = 1.0
+    def update_curve(self, voltages, currents):
+        v = np.asarray(voltages, dtype=float).ravel()
+        i = np.asarray(currents, dtype=float).ravel()
+        if v.size == 0 or i.size == 0 or v.size != i.size:
+            return
+
+        order = np.argsort(v)
+        v = v[order]
+        i = i[order]
+
+        self.curve.setData(v, i)
+
+        self._vmin, self._vmax = float(v.min()), float(v.max())
+        self._imin, self._imax = float(i.min()), float(i.max())
+
+        self.setXRange(self._vmin, self._vmax, padding=0)
+        self.setYRange(self._imin, self._imax, padding=0)
+
+        #self._set_ticks_every_n(self.getAxis("bottom"), v)
+        #self._set_ticks_every_n(self.getAxis("left"), i)
+
+    def update_points(self, mpp_v, mpp_i, measured_v, measured_i):
+        mpp_v = float(mpp_v); mpp_i = float(mpp_i)
+        measured_v = float(measured_v); measured_i = float(measured_i)
+
+        self.mppSpot.setData([mpp_v], [mpp_i])
+        self.measSpot.setData([measured_v], [measured_i])
+
+        dx = 0.01 * (self._vmax - self._vmin) if self._vmax > self._vmin else 0.001
+        dy = 0.01 * (self._imax - self._imin) if self._imax > self._imin else 0.001
+
+        self.mppLabel.setPos(mpp_v + dx, mpp_i + dy)
+        self.measLabel.setPos(measured_v + dx, measured_i + dy)
 
 scheduling = qt_wrapper.scheduling(supply, set_supply, 5)
