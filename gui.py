@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1nHtqiB.ui'
+## Form generated from reading UI file 'supply_UI_1RAOeYB.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -17,9 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDial, QDialog, QGridLayout,
     QHBoxLayout, QLCDNumber, QLabel, QLayout,
-    QLineEdit, QPushButton, QScrollBar, QSizePolicy,
-    QSlider, QSpacerItem, QTabWidget, QVBoxLayout,
-    QWidget)
+    QLineEdit, QPushButton, QSizePolicy, QSlider,
+    QSpacerItem, QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -389,12 +388,6 @@ class Ui_Dialog(object):
 
         self.verticalLayout.addWidget(self.plot_3d_preview)
 
-        self.turnbar_3d_preview = QScrollBar(self.ui_curve)
-        self.turnbar_3d_preview.setObjectName(u"turnbar_3d_preview")
-        self.turnbar_3d_preview.setOrientation(Qt.Orientation.Horizontal)
-
-        self.verticalLayout.addWidget(self.turnbar_3d_preview)
-
         self.apply_3d_preview_button = QPushButton(self.ui_curve)
         self.apply_3d_preview_button.setObjectName(u"apply_3d_preview_button")
         sizePolicy.setHeightForWidth(self.apply_3d_preview_button.sizePolicy().hasHeightForWidth())
@@ -465,21 +458,10 @@ class Ui_Dialog(object):
 
         self.curve_view_layout.addWidget(self.placeholder_3d_view)
 
-        self.horizontalScrollBar_3 = QScrollBar(self.curve_control)
-        self.horizontalScrollBar_3.setObjectName(u"horizontalScrollBar_3")
-        self.horizontalScrollBar_3.setOrientation(Qt.Orientation.Horizontal)
-
-        self.curve_view_layout.addWidget(self.horizontalScrollBar_3)
-
         self.placeholder_2d_view = QWidget(self.curve_control)
         self.placeholder_2d_view.setObjectName(u"placeholder_2d_view")
 
         self.curve_view_layout.addWidget(self.placeholder_2d_view)
-
-        self.import_button = QPushButton(self.curve_control)
-        self.import_button.setObjectName(u"import_button")
-
-        self.curve_view_layout.addWidget(self.import_button)
 
 
         self.horizontalLayout_4.addLayout(self.curve_view_layout)
@@ -491,7 +473,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(1)
+        self.option_tabs.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -535,7 +517,6 @@ class Ui_Dialog(object):
         self.irradiance_label.setText(QCoreApplication.translate("Dialog", u"Irradiance E:", None))
         self.irradiance_input_field.setInputMask(QCoreApplication.translate("Dialog", u"0000", None))
         self.curve_on_off.setText(QCoreApplication.translate("Dialog", u"On", None))
-        self.import_button.setText(QCoreApplication.translate("Dialog", u"Import", None))
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.curve_control), QCoreApplication.translate("Dialog", u"Curve control", None))
     # retranslateUi
 
