@@ -469,12 +469,15 @@ class MainDialog(QtWidgets.QDialog):
         #stop the scheduler, this ensures no other job still running in the background can influence the shutdown process
         self.scheduling.scheduler.stop()
         #this is a bit of a dirty hack due to the scheduler lacking the capability to process interrupts. Basically wait after stopping to make sure there's nothing in the pipeline
-        time.sleep(0.5)
+        time.sleep(0.2)
         turn_on = ("OP1 1")
         turn_off = ("OP1 0")
+        self.scheduling.scheduler.start_all()
         try:
             self.scheduling.supply.sendOnly(turn_off)
             self.scheduling.supply.setValues(0,0,0)
+            time.sleep(0.2)
+            self.scheduling.scheduler.stop()
         except:
             print("Turning the supply off properly after closing the Window failed.")
     def show_connection_failed_dialog(self, error_text=None):
