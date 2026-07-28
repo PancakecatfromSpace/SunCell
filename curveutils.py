@@ -407,10 +407,10 @@ def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, posit
     #leading to a situation where the index is out of bounds
     def out_of_bounce(position):
         if position > (I_1.size - 1):
-            print("Out of bounce detected. Resetting position to last value of current array.")
+            #print("Out of bounce detected. Resetting position to last value of current array.")
             position = I_1.size - 1
         if position < 0:
-            print("Out of bounce detected. Setting Position to Zero.")
+            #print("Out of bounce detected. Setting Position to Zero.")
             position = 0
         return position
     match currents_monotony:
@@ -428,6 +428,8 @@ def select_voltage_for_current_incremental_external_monotony(U_1, I_1, IM, posit
                 position = U_1.size - 1 # mark the right most position to be the right most border
                 volt = U_1[position]
             """
+            #make sure the bloody thing is never out of bounce
+            position = out_of_bounce(position)
             # check if its within range and neither all the way to the right nor all the way to the left
             if IM < I_1[position]:
                 position = position + 1
