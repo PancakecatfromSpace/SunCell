@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'supply_UI_1lpfHXJ.ui'
+## Form generated from reading UI file 'supply_UI_1JIHejD.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.2
 ##
@@ -227,7 +227,8 @@ class Ui_Dialog(object):
         self.cells_parralel_input_slider.setMinimumSize(QSize(250, 0))
         self.cells_parralel_input_slider.setMouseTracking(True)
         self.cells_parralel_input_slider.setTabletTracking(True)
-        self.cells_parralel_input_slider.setMinimum(1)
+        self.cells_parralel_input_slider.setMinimum(5)
+        self.cells_parralel_input_slider.setMaximum(20)
         self.cells_parralel_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_cells_parralel.addWidget(self.cells_parralel_input_slider)
@@ -252,7 +253,8 @@ class Ui_Dialog(object):
         self.cells_series_input_slider = QSlider(self.ui_curve)
         self.cells_series_input_slider.setObjectName(u"cells_series_input_slider")
         self.cells_series_input_slider.setMinimumSize(QSize(250, 0))
-        self.cells_series_input_slider.setMinimum(1)
+        self.cells_series_input_slider.setMinimum(40)
+        self.cells_series_input_slider.setMaximum(99)
         self.cells_series_input_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.layout_cells_series.addWidget(self.cells_series_input_slider)
@@ -276,6 +278,7 @@ class Ui_Dialog(object):
         self.layout_saturation_current.setObjectName(u"layout_saturation_current")
         self.saturation_current_input_slider = QSlider(self.ui_curve)
         self.saturation_current_input_slider.setObjectName(u"saturation_current_input_slider")
+        self.saturation_current_input_slider.setEnabled(False)
         self.saturation_current_input_slider.setMinimumSize(QSize(250, 0))
         self.saturation_current_input_slider.setMinimum(100)
         self.saturation_current_input_slider.setMaximum(999)
@@ -286,6 +289,7 @@ class Ui_Dialog(object):
 
         self.saturation_current_input_field = QLineEdit(self.ui_curve)
         self.saturation_current_input_field.setObjectName(u"saturation_current_input_field")
+        self.saturation_current_input_field.setEnabled(False)
         self.saturation_current_input_field.setMinimumSize(QSize(100, 0))
         self.saturation_current_input_field.setMaximumSize(QSize(200, 16777215))
 
@@ -303,6 +307,7 @@ class Ui_Dialog(object):
         self.layout_diodefactor.setObjectName(u"layout_diodefactor")
         self.diodefactor_input_slider = QSlider(self.ui_curve)
         self.diodefactor_input_slider.setObjectName(u"diodefactor_input_slider")
+        self.diodefactor_input_slider.setEnabled(False)
         self.diodefactor_input_slider.setMinimumSize(QSize(250, 0))
         self.diodefactor_input_slider.setMinimum(10)
         self.diodefactor_input_slider.setMaximum(99)
@@ -312,6 +317,7 @@ class Ui_Dialog(object):
 
         self.diodefactor_input_field = QLineEdit(self.ui_curve)
         self.diodefactor_input_field.setObjectName(u"diodefactor_input_field")
+        self.diodefactor_input_field.setEnabled(False)
         self.diodefactor_input_field.setMinimumSize(QSize(100, 0))
         self.diodefactor_input_field.setMaximumSize(QSize(200, 16777215))
 
@@ -329,6 +335,7 @@ class Ui_Dialog(object):
         self.layout_themalvoltage.setObjectName(u"layout_themalvoltage")
         self.thermalvoltage_input_slider = QSlider(self.ui_curve)
         self.thermalvoltage_input_slider.setObjectName(u"thermalvoltage_input_slider")
+        self.thermalvoltage_input_slider.setEnabled(False)
         self.thermalvoltage_input_slider.setMinimumSize(QSize(250, 0))
         self.thermalvoltage_input_slider.setMinimum(100)
         self.thermalvoltage_input_slider.setMaximum(999)
@@ -338,6 +345,7 @@ class Ui_Dialog(object):
 
         self.thermalvoltage_input_field = QLineEdit(self.ui_curve)
         self.thermalvoltage_input_field.setObjectName(u"thermalvoltage_input_field")
+        self.thermalvoltage_input_field.setEnabled(False)
         self.thermalvoltage_input_field.setMinimumSize(QSize(100, 0))
         self.thermalvoltage_input_field.setMaximumSize(QSize(200, 16777215))
 
@@ -355,6 +363,7 @@ class Ui_Dialog(object):
         self.layout_photo_current_coefficient.setObjectName(u"layout_photo_current_coefficient")
         self.photo_current_coefficient_input_slider = QSlider(self.ui_curve)
         self.photo_current_coefficient_input_slider.setObjectName(u"photo_current_coefficient_input_slider")
+        self.photo_current_coefficient_input_slider.setEnabled(False)
         self.photo_current_coefficient_input_slider.setMinimumSize(QSize(250, 0))
         self.photo_current_coefficient_input_slider.setMinimum(100)
         self.photo_current_coefficient_input_slider.setMaximum(999)
@@ -364,6 +373,7 @@ class Ui_Dialog(object):
 
         self.photo_current_coefficient_input_field = QLineEdit(self.ui_curve)
         self.photo_current_coefficient_input_field.setObjectName(u"photo_current_coefficient_input_field")
+        self.photo_current_coefficient_input_field.setEnabled(False)
         self.photo_current_coefficient_input_field.setMinimumSize(QSize(100, 0))
         self.photo_current_coefficient_input_field.setMaximumSize(QSize(200, 16777215))
 
@@ -473,7 +483,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.option_tabs.setCurrentIndex(0)
+        self.option_tabs.setCurrentIndex(2)
 
 
         QMetaObject.connectSlotsByName(Dialog)
@@ -492,10 +502,10 @@ class Ui_Dialog(object):
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.connection), QCoreApplication.translate("Dialog", u"Connection", None))
         self.apply_button.setText(QCoreApplication.translate("Dialog", u"Apply", None))
         self.on_botton.setText(QCoreApplication.translate("Dialog", u"On", None))
-        self.input_field_current.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
-        self.input_field_current.setText(QCoreApplication.translate("Dialog", u"0.0", None))
-        self.input_field_voltage.setInputMask(QCoreApplication.translate("Dialog", u"00.0", None))
-        self.input_field_voltage.setText(QCoreApplication.translate("Dialog", u"0.0", None))
+        self.input_field_current.setInputMask(QCoreApplication.translate("Dialog", u"00", None))
+        self.input_field_current.setText(QCoreApplication.translate("Dialog", u"0", None))
+        self.input_field_voltage.setInputMask(QCoreApplication.translate("Dialog", u"00", None))
+        self.input_field_voltage.setText(QCoreApplication.translate("Dialog", u"0", None))
         self.input_field_power.setInputMask("")
         self.input_field_power.setText("")
         self.option_tabs.setTabText(self.option_tabs.indexOf(self.manuel), QCoreApplication.translate("Dialog", u"Manuel", None))
