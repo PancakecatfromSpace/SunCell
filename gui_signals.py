@@ -85,8 +85,8 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.input_field_voltage.returnPressed.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_current.returnPressed.connect(self.handle_voltage_current_power_input)
         # safe the values as reasonable standard values
-        self.cell_p_standard = 4
-        self.cell_s_standard = 50
+        self.cell_p_standard = 5
+        self.cell_s_standard = 80
         self.i_s_standard = 8.75e-3
         self.m_standard =  4.0
         self.u_t_standard = 25.7e-3
