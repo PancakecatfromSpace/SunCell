@@ -77,9 +77,13 @@ class MainDialog(QtWidgets.QDialog):
         self.voltage = 0.0
         self.current = 0.0
         self.power = 0.0
+        """
         self.ui.input_field_voltage.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_current.textChanged.connect(self.handle_voltage_current_power_input)
         self.ui.input_field_power.textChanged.connect(self.handle_voltage_current_power_input)
+        """
+        self.ui.input_field_voltage.returnPressed.connect(self.handle_voltage_current_power_input)
+        self.ui.input_field_current.returnPressed.connect(self.handle_voltage_current_power_input)
         # safe the values as reasonable standard values
         self.cell_p_standard = 4
         self.cell_s_standard = 50
@@ -96,19 +100,19 @@ class MainDialog(QtWidgets.QDialog):
         self.c_0 = self.c_0_standard
         self.irradiance = self.irradiance_standard
         #text input fields for diode model related parameters
-        self.ui.cells_parralel_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.cells_parralel_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.cells_parralel_input_field.setText(str(self.cell_p))
-        self.ui.cells_series_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.cells_series_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.cells_series_input_field.setText(str(self.cell_s))
-        self.ui.saturation_current_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.saturation_current_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.saturation_current_input_field.setText(str(self.i_s*1000))
-        self.ui.diodefactor_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.diodefactor_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.diodefactor_input_field.setText(str(self.m*10))
-        self.ui.thermalvoltage_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.thermalvoltage_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.thermalvoltage_input_field.setText(str(self.u_t*1000))
-        self.ui.photo_current_coefficient_input_field.textChanged.connect(self.handle_diode_model_fields)
+        self.ui.photo_current_coefficient_input_field.returnPressed.connect(self.handle_diode_model_fields)
         self.ui.photo_current_coefficient_input_field.setText(str(self.c_0*1000))
-        self.ui.irradiance_input_field.textChanged.connect(self.handle_irradiance_field)
+        self.ui.irradiance_input_field.returnPressed.connect(self.handle_irradiance_field)
         self.ui.irradiance_input_field.setText(str(self.irradiance))
         # dials
         #set max values to dials
@@ -116,6 +120,7 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.current_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_CUR)
         self.ui.power_dial.setMaximum(self.scheduling.measure_signal.supply.valuelimits.MAX_VOLT * self.scheduling.measure_signal.supply.valuelimits.MAX_CUR)
         #connect changed dial value to something meaningful
+        
         self.ui.voltage_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.current_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
         self.ui.power_dial.valueChanged.connect(self.handle_voltage_current_power_dial)
