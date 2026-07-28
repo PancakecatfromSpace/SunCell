@@ -270,6 +270,8 @@ class MainDialog(QtWidgets.QDialog):
 
         scheduling.connect(self.ip_address, self.port)
         self.set_active_irradiance(100)
+
+        self.ui.connect_button.setEnabled(False)
         
     def handle_ip_port_input(self):
         """
@@ -489,6 +491,7 @@ class MainDialog(QtWidgets.QDialog):
         msg.setText(error_text or "Could not connect to the supply.")
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.open()
+        self.ui.connect_button.setEnabled(True)
 
     def setup_3d_plot(self, placeholder):
         """
