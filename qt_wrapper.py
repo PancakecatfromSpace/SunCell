@@ -37,7 +37,10 @@ class psu_measure_signal(QObject):
         Takes the measured values stored within the supply object and uses them to determine the next value to set for the power supply 
         before sending the results to the supply.
         """
-        self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
+        max_curr = self.setter._currents.max() * 1.1
+        if max_curr > self.supply.valuelimits.MAX_CUR:
+            max_curr = self.supply.valuelimits.MAX_CUR
+        self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), max_curr)
         #try:
             #self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
         #except:
