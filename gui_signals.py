@@ -151,7 +151,8 @@ class MainDialog(QtWidgets.QDialog):
         self.ui.irradiance_dial.setValue(int(self.irradiance))
         self.ui.irradiance_dial.valueChanged.connect(self.handle_irradiance_dial)
         #initialize the whole_day function as an attribute
-        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        self.step_size_voltages = 500
+        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,self.step_size_voltages,0,1000,10)
         #initialize setter for one voltage and currents array so that setter can be initalized once and receive new values later
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
         self.scheduling.measure_signal.setter = curveutils.setter(U_1, I_1)
@@ -395,7 +396,7 @@ class MainDialog(QtWidgets.QDialog):
         U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), 0.025, 'right')
         """
         self.ui.apply_3d_preview_button.setEnabled(False)
-        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,10000,0,1000,10)
+        self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,self.step_size_voltages,0,1000,10)
         #print("The irradiance is:", int(self.irradiance))
         #self.ui.apply_3d_preview_button.setEnabled(True)
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
