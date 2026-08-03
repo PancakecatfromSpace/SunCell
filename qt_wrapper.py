@@ -41,6 +41,7 @@ class psu_measure_signal(QObject):
         if max_curr > self.supply.valuelimits.MAX_CUR:
             max_curr = self.supply.valuelimits.MAX_CUR
         self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), max_curr)
+        #self.supply.setValues(self.setter.u_for_i(self.supply.measuredpoints.current), max_curr)
         #try:
             #self.supply.setValues(self.setter.u_for_i_incremental(self.supply.measuredpoints.current), self.supply.valuelimits.MAX_CUR)
         #except:

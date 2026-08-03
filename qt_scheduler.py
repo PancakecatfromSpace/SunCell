@@ -116,7 +116,7 @@ class PSURunnable(QRunnable):
                 self.scheduler._release(self.job) # exit tick if stoped is set, this prevents an issue if the tick is already started and going through the jobs that it will continue with the job list
 
 class Scheduler(QObject):
-    def __init__(self, tick_ms=20, parent=None):
+    def __init__(self, tick_ms=1, parent=None):
         super().__init__(parent)
         self._tick = QTimer(self)
         self._tick.setInterval(tick_ms)

@@ -150,8 +150,11 @@ class MainDialog(QtWidgets.QDialog):
         
         self.ui.irradiance_dial.setValue(int(self.irradiance))
         self.ui.irradiance_dial.valueChanged.connect(self.handle_irradiance_dial)
+
+        self.stepsize = 0.008
+
         #initialize the whole_day function as an attribute
-        self.step_size_voltages = 500
+        self.step_size_voltages = 28000
         self.whole_day = curveutils.whole_day_dict(self.cell_p, self.cell_s, self.i_s, self.m, self.u_t, self.c_0,self.step_size_voltages,0,1000,10)
         #initialize setter for one voltage and currents array so that setter can be initalized once and receive new values later
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
@@ -400,6 +403,7 @@ class MainDialog(QtWidgets.QDialog):
         #print("The irradiance is:", int(self.irradiance))
         #self.ui.apply_3d_preview_button.setEnabled(True)
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), self.stepsize, 'right')
         try:
             self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
             self.scheduling.measure_set_diode_model()
@@ -463,6 +467,7 @@ class MainDialog(QtWidgets.QDialog):
 
         #print("The irradiance is:", int(self.irradiance))
         U_1, I_1 = self.whole_day.return_for_irradiance(int(self.irradiance))
+        U_1, I_1 = curveutils.stepsize_reducer(list(U_1), list(I_1), self.stepsize, 'right')
         self.iv_plot.update_curve(U_1, I_1)
         #self.iv_plot.update_points(self.scheduling.measure_signal.setter._max_power_point.voltage, self.scheduling.measure_signal.setter._max_power_point.current, 0.0,0.0)
         self.scheduling.measure_signal.setter.set_voltages_currents(U_1, I_1)
